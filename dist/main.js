@@ -91,7 +91,7 @@
     const heads=rows[0].map(x=>norm(x).replace(/[^a-z0-9]/g,""));const idx=aliases=>heads.findIndex(x=>aliases.includes(x));
     const di=idx(["data","date"]),desc=idx(["descricao","description","lancamento","nome"]),cat=idx(["categoria","category"]),type=idx(["tipo","type","natureza"]),val=idx(["valor","amount","value"]),acc=idx(["conta","account","banco"]);
     if(di<0||desc<0||val<0)throw Error("Faltam colunas obrigatórias. Use Data, Descrição e Valor.");
-    const parsed=rows.slice(1).map((r,i)=>{const d=parseDate(r[di]),n=parseAmount(r[val]),name=(r[desc]||"").trim();if(!d||!name||!Number.isFinite(n))return null;const t=type<0?"":norm(r[type]||"");return{id:"import-"+Date.now()+"-"+i,date:dateString(d),description:name,category:cat<0?"Sem categoria":(r[cat]||"Sem categoria"),type:t.includes("entrada")||t.includes("receita")||t.includes("credito")||n<0?"entrada":"saída",amount:Math.abs(n),account:acc<0?"Conta principal":(r[acc]||"Conta principal")};}).filter(Boolean);
+    const parsed=rows.slice(1).map((r,i)=>{const d=parseDate(r[di]),n=parseAmount(r[val]),name=(r[desc]||"").trim();if(!d||!name||!Number.isFinite(n))return null;const t=type<0?"":norm(r[type]||"");return{id:"import-"+Date.now()+"-"+i,date:dateString(d),description:name,category:cat<0?"Sem categoria":(r[cat]||"Sem categoria"),type:t?(t.includes("entrada")||t.includes("receita")||t.includes("credito")||t==="income"||t==="credit"?"entrada":"saída"):(n<0?"entrada":"saída"),amount:Math.abs(n),account:acc<0?"Conta principal":(r[acc]||"Conta principal")};}).filter(Boolean);
     if(!parsed.length)throw Error("Não encontrei linhas válidas. Confira datas e valores.");return parsed;
   }
   function downloadCSV(rows,name){
