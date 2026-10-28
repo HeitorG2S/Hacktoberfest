@@ -66,6 +66,11 @@ export function importCsv(raw: string, referenceMonth?: string): ImportResult {
       rejected.push({ ref, reason: `valor inválido: "${amountText}"` });
       continue;
     }
+    // Como no JSON, o valor é sempre positivo; o sentido vem de `type` (estorno negativo distorceria os totais).
+    if (amountCents <= 0) {
+      rejected.push({ ref, reason: `valor deve ser positivo (o sentido vem do tipo CREDIT/DEBIT): "${amountText}"` });
+      continue;
+    }
 
     const catResult = normalizeCategory(categorySlug);
     if (catResult.warning) warnings.push({ ref, reason: catResult.warning });
@@ -152,6 +157,7 @@ export function importCsv(raw: string, referenceMonth?: string): ImportResult {
     goals: [],
     debts: [],
     reserveBalance: 0,
+    entries: [],
   };
 
   return {

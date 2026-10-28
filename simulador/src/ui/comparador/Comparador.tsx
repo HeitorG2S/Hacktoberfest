@@ -1,8 +1,7 @@
-import { useCallback } from "react";
 import { useLastRun, setLastRun } from "../session";
 import type { SectionProps } from "../props";
 import type { PlanEvaluation, Goal, Priority, PlanLabel } from "../../contracts/types";
-import { simulate } from "../../engine";
+import { currentMonth, simulate } from "../../engine";
 import { formatMoney } from "../../engine/money";
 import { scenarioLabel, priorityLabel } from "../simulador/labels";
 
@@ -49,18 +48,15 @@ export function Comparador(props: SectionProps) {
 
   const { text, intent, result } = lastRun;
 
-  const handlePriorityChange = useCallback(
-    (goalId: string, newPriority: Priority) => {
-      const updatedGoals = state.goals.map((g) =>
-        g.id === goalId ? { ...g, priority: newPriority } : g
-      );
-      const newState = { ...state, goals: updatedGoals };
-      onChange(newState);
-      const newResult = simulate(newState, intent);
-      setLastRun({ text, intent, result: newResult });
-    },
-    [state, intent, text, onChange]
-  );
+  // Função comum (não useCallback): hooks não podem vir depois do return antecipado acima.
+  // Re-simula com o mesmo mês do Simulador, para que só a prioridade mude o resultado.
+  const handlePriorityChange = (goalId: string, newPriority: Priority) => {
+    const updatedGoals = state.goals.map((g) => (g.id === goalId ? { ...g, priority: newPriority } : g));
+    const newState = { ...state, goals: updatedGoals };
+    onChange(newState);
+    const newResult = simulate(newState, intent, { month: currentMonth() });
+    setLastRun({ text, intent, result: newResult });
+  };
 
   const getGoalName = (goalId: string): string => {
     const goal = state.goals.find((g) => g.id === goalId);
@@ -185,7 +181,11 @@ export function Comparador(props: SectionProps) {
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-        {result.plans.map((plan, i) => renderPlanColumn(plan, i))}
+        {result.plans.map((plan, i) => (
+          <div key={plan.plan.label} style={{ display: "contents" }}>
+            {renderPlanColumn(plan, i)}
+          </div>
+        ))}
       </div>
 
       <div className="card" style={{ background: "var(--tertiary)", borderColor: "var(--primary)" }}>

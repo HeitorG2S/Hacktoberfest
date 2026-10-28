@@ -3,6 +3,7 @@ import type { SectionProps } from "../props";
 import type { Budget, Goal, FinancialState } from "../../contracts/types";
 import { available, monthlyRequest, totalRequested } from "../../engine/budget";
 import { formatMoney, toMoneyText, parseMoney, sum, MoneyError } from "../../engine/money";
+import { formatRateBps } from "../../engine/investment";
 
 export function Painel(props: SectionProps) {
   const { state, onChange } = props;
@@ -222,9 +223,7 @@ export function Painel(props: SectionProps) {
                   <td className="num">{formatMoney(debt.balance)}</td>
                   <td className="num">{formatMoney(debt.minPayment)}</td>
                   <td className="num">
-                    {`${Math.floor(debt.monthlyRateBps / 100)},${(debt.monthlyRateBps % 100)
-                      .toString()
-                      .padStart(2, "0")}%`}
+                    {formatRateBps(debt.monthlyRateBps)}
                   </td>
                 </tr>
               ))}

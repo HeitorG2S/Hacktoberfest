@@ -85,18 +85,29 @@ export function optimize(goals: Goal[], availableCents: Cents, opts: OptimizeOpt
     allocation.set(g.id, ch.amount);
     u -= ch.units;
   }
+  // Complemento: a busca anda em passos inteiros, então pedidos que não são múltiplos do passo (ex.: R$ 333,34)
+  // podem deixar centavos de fora. A sobra vai para as metas ainda incompletas, por prioridade, até o pedido.
+  let leftover = Math.max(0, availableCents) - [...allocation.values()].reduce((a, b) => a + b, 0);
+  for (const { g } of order) {
+    if (leftover <= 0) break;
+    const missing = monthlyRequest(g) - (allocation.get(g.id) ?? 0);
+    if (missing <= 0) continue;
+    const give = Math.min(missing, leftover);
+    allocation.set(g.id, (allocation.get(g.id) ?? 0) + give);
+    leftover -= give;
+  }
   return { label: "otimizado", allocations: goals.map((g) => ({ goalId: g.id, amount: allocation.get(g.id) ?? 0 })) };
 }
 
 // Plano alternativo: prioridade estrita. Enche a meta mais prioritária por inteiro antes de passar à próxima.
-export function conservativePlan(goals: Goal[], availableCents: Cents, stepCents: Cents = DEFAULT_STEP): Plan {
+export function conservativePlan(goals: Goal[], availableCents: Cents, _stepCents: Cents = DEFAULT_STEP): Plan {
   assertCents(availableCents, "disponível");
   let left = Math.max(0, availableCents);
   const order = goals.map((g, i) => ({ g, i })).sort((a, b) => PRIORITY_RANK[a.g.priority] - PRIORITY_RANK[b.g.priority] || a.i - b.i);
   const allocation = new Map<string, Cents>();
   for (const { g } of order) {
     const req = monthlyRequest(g);
-    const give = req <= left ? req : Math.floor(left / stepCents) * stepCents;
+    const give = Math.min(req, left); // prioridade estrita, em centavos exatos (não deixa sobra parada)
     allocation.set(g.id, give);
     left -= give;
   }

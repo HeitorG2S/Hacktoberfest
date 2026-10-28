@@ -28,11 +28,57 @@ export interface Budget {
   debtMinimums: Cents; // pagamento mínimo de dívidas
 }
 
+// Lançamento do dia a dia, registrado pelo usuário (ou pelo agente, com confirmação) ao longo do mês.
+// "despesa" consome o orçamento; "receita" é renda EXTRA, além da renda planejada em Budget.income.
+export type EntryType = "despesa" | "receita";
+export type EntrySource = "manual" | "agente";
+
+export interface Entry {
+  id: string;
+  date: string; // AAAA-MM-DD
+  description: string;
+  amount: Cents; // sempre > 0; o sentido vem de `type`
+  type: EntryType;
+  categorySlug: string; // um de CATEGORY_SLUGS (contracts/import-format.ts); desconhecida = "outros"
+  source: EntrySource;
+}
+
+// Taxa de referência para projetar renda fixa. Digitada pelo usuário (o plano grátis da Brapi não traz Selic/CDI).
+export interface InvestmentSettings {
+  annualRateBps: number; // ex.: 1075 = 10,75% ao ano
+  label: string; // de onde veio a taxa, ex.: "CDI informado pelo usuário"
+}
+
 export interface FinancialState {
   budget: Budget;
   goals: Goal[];
   debts: Debt[];
   reserveBalance: Cents; // reserva de emergência já acumulada
+  entries: Entry[]; // lançamentos do mês (e de meses anteriores)
+  investment?: InvestmentSettings;
+}
+
+// Resumo do mês calculado pelo motor (engine/month.ts) a partir do orçamento e dos lançamentos.
+export interface MonthSummary {
+  month: string; // AAAA-MM
+  plannedAvailable: Cents; // available(budget)
+  spentByBucket: { fixed: Cents; variableEssential: Cents; debt: Cents; discretionary: Cents };
+  overspend: Cents; // quanto as despesas planejadas passaram do orçamento (soma por grupo)
+  extraIncome: Cents; // receitas lançadas no mês
+  effectiveAvailable: Cents; // plannedAvailable + extraIncome - discretionary - overspend
+  entriesCount: number;
+}
+
+// Projeção de aportes mensais a uma taxa fixa (engine/investment.ts).
+export interface InvestmentProjection {
+  monthlyContribution: Cents;
+  months: number;
+  annualRateBps: number;
+  monthlyRatePpm: number; // taxa mensal equivalente em partes por milhão
+  totalContributed: Cents;
+  finalBalance: Cents;
+  interest: Cents;
+  series: { month: number; balance: Cents }[];
 }
 
 export interface Allocation {
@@ -79,6 +125,8 @@ export interface PlanEvaluation {
 }
 
 export type ScenarioType =
+  | "registrar_gasto"
+  | "investimento"
   | "alocar_metas"
   | "compra"
   | "meta_com_prazo"
@@ -95,8 +143,20 @@ export interface IntentGoal {
   priority: Priority | null;
 }
 
+// Lançamento proposto pelo agente; só entra no estado depois da confirmação do usuário.
+export interface ProposedEntry {
+  description: string;
+  amount: Cents;
+  type: EntryType;
+  categorySlug: string;
+  date: string | null; // null = hoje
+}
+
 export interface Intent {
   scenario: ScenarioType;
+  entries: ProposedEntry[]; // registrar_gasto
+  tickers: string[]; // investimento: ativos citados (ex.: PETR4, MXRF11)
+  months: number | null; // investimento: prazo citado
   goals: IntentGoal[];
   amount: Cents | null; // valor da compra / despesa inesperada
   incomeChangePct: number | null; // ex.: -30 para perda de 30% da renda
@@ -136,4 +196,41 @@ export interface ImportResult {
     warnings: ImportIssue[];
     totals: Budget; // como o orçamento foi derivado
   };
+}
+
+// ---- Brapi e RAG ----
+
+// Cotação normalizada da Brapi (src/brapi/client.ts). Preço já em centavos.
+export interface Quote {
+  symbol: string;
+  name: string;
+  price: Cents;
+  changePct: number | null; // variação do dia em % (indicador, não dinheiro)
+  currency: string;
+  updatedAt: string | null; // ISO, horário da cotação informado pela Brapi
+  logoUrl: string | null;
+}
+
+export interface TickerInfo {
+  symbol: string;
+  name: string;
+  type: string; // "stock" | "fund" | "bdr" | ...
+  sector: string | null;
+}
+
+// Trecho recuperado para o RAG: cada fato que o agente pode citar.
+export interface RetrievedDoc {
+  id: string; // ex.: "brapi:PETR4"
+  source: "brapi" | "motor";
+  title: string;
+  text: string; // fatos em português, com os números já formatados
+  url: string | null;
+  fetchedAt: string; // ISO
+}
+
+export interface RagAnswer {
+  answer: string;
+  citations: string[]; // ids de RetrievedDoc usados
+  grounded: boolean; // true = passou na checagem de que todo número da resposta está nos documentos
+  source: "api" | "mock";
 }

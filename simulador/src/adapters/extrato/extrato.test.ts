@@ -132,3 +132,25 @@ describe("importStatement - referenceMonth override", () => {
     expect(result.summary.rejected.every(r => r.reason.includes("fora do mês de referência 2026-09"))).toBe(true);
   });
 });
+
+describe("achados da review", () => {
+  it("CSV rejeita valor negativo ou zero", () => {
+    const csv = "date;description;amount;type;categorySlug;recurring\n2026-10-03;Estorno;-120,00;DEBIT;mercado;\n2026-10-03;Zero;0,00;DEBIT;mercado;\n2026-10-04;Feira;10,00;DEBIT;mercado;";
+    const r = importStatement(csv, "csv");
+    expect(r.summary.accepted).toBe(1);
+    expect(r.summary.rejected.map((x) => x.reason).every((m) => m.includes("positivo"))).toBe(true);
+    expect(r.state.budget.variableEssential).toBe(1000);
+  });
+
+  it("pagamento de dívida recorrente não conta em fixas nem duas vezes", () => {
+    const json = JSON.stringify({
+      format: "simfin-import/v1", currency: "BRL", referenceMonth: "2026-10",
+      transactions: [{ id: "t1", date: "2026-10-05", description: "Cartão", amount: "250.00", type: "DEBIT", categorySlug: "divida", recurring: true }],
+      debts: [{ id: "cartao", name: "Cartão", balance: "3000.00", minPayment: "250.00", monthlyRateBps: 1200 }],
+    });
+    const r = importStatement(json, "json");
+    expect(r.state.budget.fixed).toBe(0);
+    expect(r.state.budget.debtMinimums).toBe(25000);
+  });
+});
+

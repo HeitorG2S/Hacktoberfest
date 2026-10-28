@@ -6,7 +6,7 @@ export function available(b: Budget): Cents {
   return assertCents(b.income - b.fixed - b.variableEssential - b.debtMinimums, "disponível");
 }
 
-// Quanto a meta pede por mês: sem prazo, o próprio alvo; com prazo, o que falta dividido pelos meses.
+// Quanto a meta pede por mês: sem prazo, o que falta (alvo − já guardado); com prazo, o que falta dividido pelos meses.
 export function monthlyRequest(g: Goal): Cents {
   const remaining = Math.max(0, g.target - g.saved);
   return g.deadlineMonths === null ? remaining : ceilDiv(remaining, g.deadlineMonths);

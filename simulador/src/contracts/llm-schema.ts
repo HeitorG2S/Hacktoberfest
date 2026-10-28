@@ -8,6 +8,8 @@ export const MONEY_TEXT = /^\d+(\.\d{1,2})?$/;
 const money = z.string().regex(MONEY_TEXT);
 
 export const SCENARIOS = [
+  "registrar_gasto",
+  "investimento",
   "alocar_metas",
   "compra",
   "meta_com_prazo",
@@ -34,6 +36,21 @@ export const RawIntentSchema = z
     income_change_pct: z.number().int().min(-100).max(100).nullable(),
     proposed_allocation: z.array(z.object({ goal: z.string().min(1), amount: money })).max(10),
     missing: z.array(z.string()).max(10),
+    // Campos novos (opcionais na resposta para compatibilidade):
+    entries: z
+      .array(
+        z.object({
+          description: z.string().min(1).max(90),
+          amount: money,
+          type: z.enum(["despesa", "receita"]),
+          category: z.string().min(1).max(30),
+          date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+        }),
+      )
+      .max(10)
+      .default([]),
+    tickers: z.array(z.string().regex(/^[A-Z]{4}\d{1,2}$/)).max(5).default([]),
+    months: z.number().int().min(1).max(600).nullable().default(null),
   })
   .strict();
 

@@ -1,5 +1,6 @@
 import { RawIntentSchema, type RawIntent, SCENARIOS } from "../contracts/llm-schema";
-import type { Intent, IntentGoal, Cents, Priority, ScenarioType } from "../contracts/types";
+import { CATEGORY_SLUGS } from "../contracts/import-format";
+import type { Intent, IntentGoal, Cents, Priority, ProposedEntry, ScenarioType } from "../contracts/types";
 import { parseMoney } from "../engine/money";
 
 export function extractJson(text: string): unknown {
@@ -46,6 +47,20 @@ function toScenario(value: string): ScenarioType {
   return "desconhecido";
 }
 
+// Categoria livre do LLM → slug conhecido (sem acento/caixa); desconhecida vira "outros".
+const CATEGORY_ALIASES: Record<string, string> = {
+  alimentacao: "mercado", supermercado: "mercado", comida: "mercado", feira: "mercado",
+  aluguel: "moradia", condominio: "moradia", luz: "contas", agua: "contas", internet: "contas", telefone: "contas",
+  uber: "transporte", onibus: "transporte", combustivel: "transporte", gasolina: "transporte",
+  farmacia: "saude", remedio: "saude", medico: "saude", restaurante: "lazer", cinema: "lazer",
+  curso: "educacao", escola: "educacao", cartao: "divida", emprestimo: "divida",
+};
+export function normalizeCategory(raw: string): string {
+  const s = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  if ((CATEGORY_SLUGS as readonly string[]).includes(s)) return s;
+  return CATEGORY_ALIASES[s] ?? "outros";
+}
+
 export function toIntent(raw: RawIntent, source: "api" | "mock"): Intent {
   const goals: IntentGoal[] = raw.goals.map((g) => ({
     name: g.name,
@@ -59,8 +74,19 @@ export function toIntent(raw: RawIntent, source: "api" | "mock"): Intent {
     amount: parseMoney(p.amount),
   }));
 
+  const entries: ProposedEntry[] = raw.entries.map((e) => ({
+    description: e.description,
+    amount: parseMoney(e.amount),
+    type: e.type,
+    categorySlug: normalizeCategory(e.category),
+    date: e.date,
+  }));
+
   return {
     scenario: toScenario(raw.scenario),
+    entries,
+    tickers: raw.tickers,
+    months: raw.months,
     goals,
     amount: raw.amount !== null ? parseMoney(raw.amount) : null,
     incomeChangePct: raw.income_change_pct,
