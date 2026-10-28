@@ -1,9 +1,11 @@
 # Clareza — painel financeiro (front-end)
 
 **Projeto local:** `sites/painel-financeiro`
-**Página inicial:** `dist/index.html`
+**Landing page:** `dist/index.html`
+**Painel financeiro:** `dist/dashboard.html`
 **Site privado:** https://painel-financeiro-com-chat.sert-o-5708.chatgpt.site
 **Comparativo dos ícones:** abra `dist/favicon-options.html`
+**GitHub privado:** https://github.com/HeitorG2S/Hacktoberfest
 
 O painel é estático e não possui backend. Os dados financeiros de demonstração são fictícios. Importações aceitam CSV UTF-8 ou TSV; registros e conversa são processados no navegador.
 

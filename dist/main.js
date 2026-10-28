@@ -138,4 +138,6 @@
   $("#addDialog").addEventListener("click",e=>{if(e.target===$("#addDialog"))$("#addDialog").close();});
   $("#demoVideo").addEventListener("ended",()=>{const b=$("[data-action=show-example]");b.classList.add("pulse");setTimeout(()=>b.classList.remove("pulse"),900);});
   render();
+  if(new URLSearchParams(location.search).get("example")==="1"){send("Quais categorias pesaram mais?");if(innerWidth<=1050)$("#chat").classList.add("open");}
+
 })();

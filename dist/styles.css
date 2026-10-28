@@ -40,3 +40,4 @@ body{background:#faf8ff}.sidebar{background:#faf8ff;color:#17291f;border-bottom:
 .mobile-bar a,.mobile-bar button{display:grid;justify-items:center;gap:3px;padding:3px;border:0;background:transparent;color:#496355}.mobile-bar a span,.mobile-bar button span{font-size:18px;line-height:20px}.mobile-bar small{font-size:7px}
 }
 @media(max-width:370px){.metric{padding-right:6px;padding-left:6px}.metric-head{font-size:7px}.metric strong{font-size:14px}.balance-copy>strong{font-size:30px}}
+.home-link{color:#287755;font-size:8px;font-weight:650}.home-link:hover{text-decoration:underline;text-underline-offset:3px}@media(max-width:700px){.home-link{font-size:7px}}
