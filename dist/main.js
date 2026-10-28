@@ -28,6 +28,7 @@
   try { data=JSON.parse(localStorage.getItem(KEY)||"null"); } catch { data=null; }
   let isDemo=!Array.isArray(data);
   let records=isDemo?demoRows():data;
+  let financeChart=null,activeChart="flow",chartWindow=6,chartStyle="bar",analysisView="summary",categorySort="desc";
   const money=n=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(n)||0);
   const fmtDate=s=>{const d=parseDate(s);return d?new Intl.DateTimeFormat("pt-BR",{day:"2-digit",month:"short"}).format(d).replace(".",""):"—";};
   function norm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();}
@@ -63,18 +64,69 @@
     $("#incomeCount").textContent=current.filter(r=>r.type==="entrada").length;
     $("#expenseCount").textContent=expenses.length+(expenses.length===1?" lançamento":" lançamentos");
     $("#topCategory").textContent=cats[0]?cats[0].name:"Sem dados";$("#topCategoryValue").textContent=cats[0]?money(cats[0].value)+" neste mês":"Importe uma planilha";$("#insightText").textContent=cats[0]&&totals.out?cats[0].name+" concentra "+Math.round(cats[0].value/totals.out*100)+"% das despesas registradas neste mês.":"Importe uma planilha com lançamentos para gerar este resumo.";
-    $("#categoryTotal").textContent=money(totals.out);
-    $("#categories").innerHTML=cats.slice(0,5).map((c,i)=>'<div class="cat"><span class="cat-name"><i class="swatch" style="background:'+["#388960","#8dbb9b","#e5b47a","#a6b3cf","#c3a7d0"][i]+'"></i> '+esc(c.name)+'</span><span class="cat-value">'+money(c.value)+'</span><span class="track"><i style="width:'+Math.max(3,totals.out?c.value/totals.out*100:0)+'%;background:'+["#388960","#8dbb9b","#e5b47a","#a6b3cf","#c3a7d0"][i]+'"></i></span></div>').join("")||'<p class="empty">Nenhuma despesa neste mês.</p>';
-    renderChart();renderTable();
+    renderAnalysis();renderTable();
     $("#dataNotice").textContent=isDemo?"Os valores exibidos são fictícios. Importe sua planilha para começar.":"Sua planilha está salva neste navegador. Os dados não são enviados a um servidor.";
   }
-  function renderChart(){
-    const base=new Date();base.setDate(1);base.setMonth(base.getMonth()-5);const list=[];
-    for(let i=0;i<6;i++){const d=new Date(base.getFullYear(),base.getMonth()+i,1);const rows=records.filter(r=>{const x=parseDate(r.date);return x&&x.getFullYear()===d.getFullYear()&&x.getMonth()===d.getMonth();});list.push({d,...sum(rows)});}
-    const max=Math.max(1,...list.map(x=>Math.max(x.in,x.out)));
-    const scale=n=>n>=10000?"R$ "+Math.round(n/1000)+" mil":n>=1000?"R$ "+(n/1000).toFixed(1).replace(".",",")+" mil":money(n);
-    $("#scaleTop").textContent=scale(max);$("#scaleMid").textContent=scale(max*.5);
-    $("#chart").innerHTML=list.map(x=>'<div class="month" title="'+months[x.d.getMonth()]+": entradas "+money(x.in)+" · despesas "+money(x.out)+'"><div class="bars"><i class="bar in" style="height:'+Math.max(2,x.in/max*100)+'%"></i><i class="bar out" style="height:'+Math.max(2,x.out/max*100)+'%"></i></div><small>'+months[x.d.getMonth()]+'</small></div>').join("");
+  function monthBuckets(count){
+    const now=new Date(),first=new Date(now.getFullYear(),now.getMonth()-count+1,1);
+    return Array.from({length:count},(_,i)=>{const date=new Date(first.getFullYear(),first.getMonth()+i,1),rows=records.filter(r=>{const d=parseDate(r.date);return d&&d.getFullYear()===date.getFullYear()&&d.getMonth()===date.getMonth();}),totals=sum(rows);return{date,rows,in:totals.in,out:totals.out,balance:totals.in-totals.out};});
+  }
+  function periodRows(buckets){const dates=new Set(buckets.map(b=>b.date.getFullYear()+"-"+b.date.getMonth()));return records.filter(r=>{const d=parseDate(r.date);return d&&dates.has(d.getFullYear()+"-"+d.getMonth());});}
+  function compactMoney(value){const n=Number(value)||0,abs=Math.abs(n);if(abs>=1000000)return"R$ "+(n/1000000).toFixed(1).replace(".",",")+" mi";if(abs>=1000)return"R$ "+(n/1000).toFixed(abs>=10000?0:1).replace(".",",")+" mil";return"R$ "+Math.round(n);}
+  function monthLabel(date){return new Intl.DateTimeFormat("pt-BR",{month:"short",year:"2-digit"}).format(date).replace(".","");}
+  function updateAnalysisControls(){
+    const shell=$(".analysis-shell");if(!shell)return;shell.dataset.analysisView=analysisView;
+    $(".analysis-mode").querySelectorAll("button[data-analysis-view]").forEach(button=>{const active=button.dataset.analysisView===analysisView;button.classList.toggle("is-active",active);button.setAttribute("aria-selected",String(active));});
+    $$("[data-chart-mode]").forEach(button=>{const active=button.dataset.chartMode===activeChart;button.classList.toggle("is-active",active);button.setAttribute("aria-pressed",String(active));});
+    const sortField=$(".category-sort-field"),styleField=$(".chart-style-field");if(sortField)sortField.hidden=activeChart!=="categories";if(styleField)styleField.hidden=activeChart==="categories";
+  }
+  function updateChartTable(headers,rows){
+    $("#chartDataHead").innerHTML="<tr>"+headers.map(h=>"<th>"+esc(h)+"</th>").join("")+"</tr>";
+    $("#chartDataBody").innerHTML=rows.length?rows.map(row=>"<tr>"+row.map(cell=>"<td>"+esc(cell)+"</td>").join("")+"</tr>").join(""):'<tr><td colspan="'+headers.length+'" class="empty">Sem valores neste recorte.</td></tr>';
+  }
+  function renderAnalysis(){
+    const periodSelect=$("#chartPeriod"),styleSelect=$("#chartStyle"),sortSelect=$("#categorySort");
+    if(periodSelect)chartWindow=Number(periodSelect.value)||chartWindow;if(styleSelect)chartStyle=styleSelect.value;if(sortSelect)categorySort=sortSelect.value;
+    updateAnalysisControls();
+    const buckets=monthBuckets(chartWindow),rows=periodRows(buckets),totals=sum(rows),categories=byCategory(rows.filter(r=>r.type!=="entrada"));
+    const periodLabel="Últimos "+chartWindow+" meses",hasRows=rows.length>0;
+    $("#graphRange").textContent=periodLabel;$("#analysisSubtitle").textContent=analysisView==="summary"?"Resumo calculado com os lançamentos carregados neste navegador.":"Explore períodos, categorias e valores exatos dos seus lançamentos.";
+    let labels=[],datasets=[],tableRows=[],hasChartData=hasRows;
+    if(activeChart==="categories"){
+      const sorted=categories.slice().sort((a,b)=>categorySort==="asc"?a.value-b.value:b.value-a.value),top=sorted.slice(0,9),rest=sorted.slice(9);
+      if(rest.length)top.push({name:"Outras categorias",value:rest.reduce((a,c)=>a+c.value,0)});
+      labels=top.map(c=>c.name);datasets=[{label:"Despesas",data:top.map(c=>c.value),backgroundColor:top.map((_,i)=>["#16815d","#44a67c","#77b990","#a9cda9","#e7b778","#d98e75","#8ca4bd","#a78db5","#bac5a2","#85958d"][i%10]),borderRadius:6,barThickness:16}];
+      tableRows=top.map(c=>[c.name,money(c.value),totals.out?Math.round(c.value/totals.out*100)+"%":"0%"]);hasChartData=top.length>0;
+      $("#graphEyebrow").textContent="DISTRIBUIÇÃO DAS DESPESAS";$("#graphTitle").textContent="Despesas por categoria";$("#graphSummary").textContent="Categorias somadas no período selecionado.";
+      $("#graphInsightTitle").textContent="Onde o dinheiro pesou mais";
+      $("#graphInsight").textContent=top.length?"“"+top[0].name+"” lidera com "+money(top[0].value)+(totals.out?" ("+Math.round(top[0].value/totals.out*100)+"% das despesas).":".")+" Use “Explorar dados” para mudar a ordem e conferir cada valor.":"Ainda não há despesas no período escolhido.";
+      updateChartTable(["Categoria","Despesas","Participação"],tableRows);
+    }else if(activeChart==="balance"){
+      labels=buckets.map(b=>monthLabel(b.date));datasets=[{label:"Saldo mensal",data:buckets.map(b=>b.balance),borderColor:"#16815d",backgroundColor:"#16815d18",pointBackgroundColor:buckets.map(b=>b.balance>=0?"#16815d":"#d57363"),pointBorderColor:"#fff",pointRadius:3,pointHoverRadius:5,borderWidth:2,fill:chartStyle==="line",tension:.32}];
+      tableRows=buckets.map(b=>[monthLabel(b.date),money(b.in),money(b.out),money(b.balance)]);$("#graphEyebrow").textContent="ENTRADAS MENOS DESPESAS";$("#graphTitle").textContent="Saldo ao longo do tempo";$("#graphSummary").textContent="Saldo mensal calculado a partir das entradas e despesas registradas.";
+      const positive=buckets.filter(b=>b.balance>0).length;$("#graphInsightTitle").textContent="Leitura do saldo";$("#graphInsight").textContent=hasRows?"O saldo acumulado do período é "+money(totals.in-totals.out)+". Em "+positive+" de "+buckets.length+" meses o resultado mensal ficou positivo.":"Ainda não há lançamentos no período escolhido.";
+      updateChartTable(["Mês","Entradas","Despesas","Saldo"],tableRows);
+    }else{
+      labels=buckets.map(b=>monthLabel(b.date));datasets=chartStyle==="line"?[
+        {label:"Entradas",data:buckets.map(b=>b.in),borderColor:"#16815d",backgroundColor:"#16815d18",pointBackgroundColor:"#16815d",pointRadius:3,borderWidth:2,fill:false,tension:.32},
+        {label:"Despesas",data:buckets.map(b=>b.out),borderColor:"#d57363",backgroundColor:"#d5736318",pointBackgroundColor:"#d57363",pointRadius:3,borderWidth:2,fill:false,tension:.32}
+      ]:[
+        {label:"Entradas",data:buckets.map(b=>b.in),backgroundColor:"#16815d",borderRadius:5,maxBarThickness:28},
+        {label:"Despesas",data:buckets.map(b=>b.out),backgroundColor:"#e1a191",borderRadius:5,maxBarThickness:28}
+      ];
+      tableRows=buckets.map(b=>[monthLabel(b.date),money(b.in),money(b.out),money(b.balance)]);$("#graphEyebrow").textContent=chartStyle==="line"?"TENDÊNCIA MENSAL":"ENTRADAS E DESPESAS";$("#graphTitle").textContent=chartStyle==="line"?"Tendência do fluxo financeiro":"Comparação mensal";$("#graphSummary").textContent="Selecione um ponto ou coluna para ver os valores daquele mês.";
+      const peak=buckets.slice().sort((a,b)=>b.out-a.out)[0];$("#graphInsightTitle").textContent="Visão do período";$("#graphInsight").textContent=hasRows?"Entraram "+money(totals.in)+" e saíram "+money(totals.out)+"; o saldo líquido foi "+money(totals.in-totals.out)+"."+(peak&&peak.out?" O maior total de despesas foi em "+monthLabel(peak.date)+" ("+money(peak.out)+").":""):"Ainda não há lançamentos no período escolhido.";
+      updateChartTable(["Mês","Entradas","Despesas","Saldo"],tableRows);
+    }
+    $("#periodExpense").textContent=money(totals.out);$("#periodBalance").textContent=money(totals.in-totals.out);$("#periodCount").textContent=rows.length;
+    const chartEmpty=$("#chartEmpty");chartEmpty.hidden=hasChartData&&Boolean(window.Chart);chartEmpty.textContent=!window.Chart?"O gráfico não carregou. Atualize a página para tentar novamente.":hasChartData?"":activeChart==="categories"?"Nenhuma despesa encontrada no período escolhido.":"Nenhum lançamento no período escolhido. Importe uma planilha ou selecione outro período.";$("#financeChart").setAttribute("aria-label",activeChart==="categories"?"Despesas por categoria nos últimos "+chartWindow+" meses":activeChart==="balance"?"Saldo financeiro mensal nos últimos "+chartWindow+" meses":"Comparação de entradas e despesas nos últimos "+chartWindow+" meses");
+    if(financeChart){financeChart.destroy();financeChart=null;}
+    const canvas=$("#financeChart");
+    if(hasChartData&&window.Chart&&canvas){
+      const horizontal=activeChart==="categories",isLine=activeChart!=="categories"&&(chartStyle==="line"||activeChart==="balance");
+      financeChart=new Chart(canvas,{type:isLine?"line":"bar",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:Math.min(window.devicePixelRatio||1,2),animation:{duration:240},interaction:{mode:"index",intersect:false},indexAxis:horizontal?"y":"x",plugins:{legend:{display:activeChart!=="categories",position:"top",align:"end",labels:{usePointStyle:true,pointStyle:"circle",boxWidth:7,boxHeight:7,padding:14,color:"#718078",font:{family:"Inter, system-ui, sans-serif",size:10}}},tooltip:{backgroundColor:"#173f32",padding:10,cornerRadius:8,displayColors:true,callbacks:{label:ctx=>" "+ctx.dataset.label+": "+money(Number(ctx.parsed.x??ctx.parsed.y??0))}}},scales:horizontal?{x:{beginAtZero:true,grid:{color:"#edf1ed"},border:{display:false},ticks:{color:"#87948c",font:{size:9},callback:value=>compactMoney(value)}},y:{grid:{display:false},border:{display:false},ticks:{color:"#647269",font:{size:9},autoSkip:false}}}:{x:{grid:{display:false},border:{display:false},ticks:{color:"#87948c",font:{size:9},maxRotation:0,autoSkip:false}},y:{beginAtZero:activeChart!=="balance",grid:{color:"#edf1ed"},border:{display:false},ticks:{color:"#87948c",font:{size:9},callback:value=>compactMoney(value)}}},onClick:(event,elements,chart)=>{if(!elements.length)return;const index=elements[0].index;if(activeChart==="categories"){const value=chart.data.datasets[0].data[index],name=chart.data.labels[index];$("#chartSelection").textContent=name+" · "+money(value)+" em despesas no período.";}else{const b=buckets[index];$("#chartSelection").textContent=monthLabel(b.date)+" · Entradas "+money(b.in)+" · Despesas "+money(b.out)+" · Saldo "+money(b.balance)+".";}}}});
+    }
+    $("#chartSelection").textContent="Selecione uma coluna, linha ou ponto para ver os valores exatos.";
   }
   function renderTable(){
     const q=norm($("#search").value.trim());
@@ -103,22 +155,30 @@
   function send(q){
     q=String(q||"").trim();if(!q)return;
     const add=(text,user,source)=>{const m=document.createElement("div");m.className="message "+(user?"user":"assistant");m.innerHTML='<span class="msg-avatar">'+(user?"V":"✳")+'</span><div class="bubble"><p></p>'+(source?'<small class="source">'+esc(source)+'</small>':"")+'</div>';$("p",m).textContent=text;$("#messages").appendChild(m);$("#messages").scrollTop=$("#messages").scrollHeight;};
-    add(q,true);const normalized=norm(q),month=currentRows(),out=month.filter(r=>r.type!=="entrada"),sumMonth=sum(month),cats=byCategory(out);let answer="",source="Resposta calculada localmente";
+    add(q,true);const normalized=norm(q),asksCategory=/categoria|onde gasto|pesaram|distribuicao/.test(normalized),asksBalance=/saldo|sobrou|quanto ficou|quanto restou/.test(normalized),asksTrend=/compar|variaram|mudaram|tendencia|evolucao/.test(normalized),asksBiggest=/maior gasto|mais gastei|maior despesa/.test(normalized);
+    const monthMatch=normalized.match(/(?:ultimos?|ultimas?)?\s*(3|6|12)\s*mes/);if(monthMatch){chartWindow=Number(monthMatch[1]);$("#chartPeriod").value=String(chartWindow);}else if(/neste mes|este mes|mes atual/.test(normalized)){chartWindow=3;$("#chartPeriod").value="3";}
+    activeChart=asksCategory||asksBiggest?"categories":asksBalance?"balance":"flow";if(asksTrend){chartStyle="line";$("#chartStyle").value="line";}analysisView="explore";renderAnalysis();
+    const month=currentRows(),selectedRows=periodRows(monthBuckets(chartWindow)),rows=selectedRows,totals=sum(rows),expenses=rows.filter(r=>r.type!=="entrada"),cats=byCategory(expenses);let answer="",source="Calculado localmente neste navegador";
     if(!records.length)answer="Ainda não há lançamentos. Importe sua planilha ou adicione um registro para começarmos.";
-    else if(normalized.includes("maior gasto")||normalized.includes("mais gastei")||normalized.includes("maior despesa")){const biggest=out.slice().sort((a,b)=>b.amount-a.amount)[0];answer=biggest?"Seu maior lançamento de despesa neste mês foi "+biggest.description+" ("+biggest.category+"): "+money(biggest.amount)+", em "+fmtDate(biggest.date)+".":"Não encontrei despesas registradas neste mês.";source="Conferi "+out.length+" despesas do mês atual";}
-    else if(normalized.includes("categoria")||normalized.includes("onde gasto")||normalized.includes("pesaram")){answer=cats.length?"As maiores categorias neste mês são "+cats.slice(0,3).map(c=>c.name+" ("+money(c.value)+")").join(", ")+". O total classificado é "+money(sumMonth.out)+".":"Não encontrei despesas categorizadas neste mês.";source="Soma dos lançamentos por categoria";}
-    else if(normalized.includes("compar")||normalized.includes("tendencia")){const a=new Date();a.setDate(1);const prior=new Date(a.getFullYear(),a.getMonth()-1,1);const previous=sum(records.filter(r=>{const d=parseDate(r.date);return d&&d.getFullYear()===prior.getFullYear()&&d.getMonth()===prior.getMonth();})).out;const delta=sumMonth.out-previous;answer=previous?"As despesas deste mês somam "+money(sumMonth.out)+"; no mês anterior, foram "+money(previous)+". A diferença foi "+money(Math.abs(delta))+(delta>0?" a mais.":delta<0?" a menos.":"."):"Ainda não há dados do mês anterior para comparar.";source="Comparação feita pelas datas da planilha";}
-    else if(/entrada|saiu|saldo|receita|sobrou|quanto|total/.test(normalized)){answer="Neste mês encontrei "+money(sumMonth.in)+" em entradas e "+money(sumMonth.out)+" em despesas. O saldo calculado para esse período é "+money(sumMonth.in-sumMonth.out)+".";source="Resumo de "+month.length+" lançamentos do mês";}
-    else answer="Posso resumir entradas e despesas, identificar o maior gasto registrado, listar as categorias com maior valor e comparar os últimos dois meses. Tente uma dessas perguntas sobre seus dados.";
+    else if(asksBiggest){const biggest=expenses.slice().sort((a,b)=>b.amount-a.amount)[0];answer=biggest?"O maior lançamento de despesa encontrado no período foi “"+biggest.description+"” ("+(biggest.category||"Sem categoria")+"): "+money(biggest.amount)+", em "+fmtDate(biggest.date)+".":"Não encontrei despesas nos meses selecionados.";source="Verifiquei "+expenses.length+" despesas dos últimos "+chartWindow+" meses";}
+    else if(asksCategory){answer=cats.length?"As categorias com maior despesa nos últimos "+chartWindow+" meses são "+cats.slice(0,3).map(c=>c.name+" ("+money(c.value)+")").join(", ")+". O total de despesas no período é "+money(totals.out)+".":"Não encontrei despesas categorizadas nos meses selecionados.";source="Soma local de "+expenses.length+" despesas por categoria";}
+    else if(asksTrend){const buckets=monthBuckets(chartWindow),first=buckets[0],last=buckets[buckets.length-1],delta=last.out-first.out,pct=first.out?Math.round(Math.abs(delta)/first.out*100):null;answer="As despesas foram "+money(first.out)+" em "+monthLabel(first.date)+" e "+money(last.out)+" em "+monthLabel(last.date)+"."+(delta===0?" O valor ficou igual entre esses meses.":" No último mês, ficaram "+money(Math.abs(delta))+" "+(delta>0?"acima":"abaixo")+" do primeiro"+(pct===null?".":" ("+pct+"%)."));source="Comparação dos valores mensais agrupados pelas datas da planilha";}
+    else if(asksBalance){const currentOnly=/neste mes|este mes|mes atual/.test(normalized),chosen=currentOnly?month:rows,totalsChosen=sum(chosen);answer=(currentOnly?"Neste mês":"Nos últimos "+chartWindow+" meses")+", encontrei "+money(totalsChosen.in)+" em entradas e "+money(totalsChosen.out)+" em despesas. O saldo calculado é "+money(totalsChosen.in-totalsChosen.out)+".";source="Resumo de "+chosen.length+" lançamentos carregados localmente";}
+    else{answer="O gráfico foi ajustado para mostrar o fluxo dos últimos "+chartWindow+" meses. Posso comparar a tendência, listar categorias, encontrar o maior gasto ou calcular o saldo. Pergunte sobre os lançamentos importados para ver os valores.";source="Leitura local; nenhuma informação enviada a um serviço externo";}
     setTimeout(()=>add(answer,false,source),160);
   }
   $("#addBtn").addEventListener("click",()=>{const f=$("#entryForm");f.reset();f.elements.date.value=dateString(new Date());$("#addDialog").showModal();});
   $("#entryForm").addEventListener("submit",e=>{e.preventDefault();const f=e.currentTarget,d=new FormData(f),amount=parseAmount(d.get("amount")),date=parseDate(d.get("date"));if(!Number.isFinite(amount)||amount<=0||!date){toast("Informe um valor positivo e uma data válida.");return;}records.push({id:"local-"+Date.now(),date:dateString(date),description:String(d.get("description")).trim(),category:String(d.get("category")).trim()||"Sem categoria",type:d.get("type"),amount:Math.abs(amount),account:String(d.get("account")).trim()||"Conta principal"});records.sort((a,b)=>b.date.localeCompare(a.date));persist();render();$("#addDialog").close();toast("Lançamento salvo neste navegador.");});
   $("#fileInput").addEventListener("change",e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!/\.(csv|tsv)$/i.test(file.name)){toast("Exporte sua planilha como CSV UTF-8 ou TSV.");e.target.value="";return;}file.text().then(text=>{const parsed=parseCSV(text);if(!confirm("Importar "+parsed.length+" registros e substituir os atuais neste navegador?"))return;records=parsed.sort((a,b)=>b.date.localeCompare(a.date));persist();render();toast(parsed.length+" lançamentos importados.");}).catch(err=>toast(err.message||"Não consegui ler esta planilha. Confira o formato.")).finally(()=>e.target.value="");});
   $("#search").addEventListener("input",renderTable);
+  $("#chartPeriod").addEventListener("change",renderAnalysis);
+  $("#chartStyle").addEventListener("change",renderAnalysis);
+  $("#categorySort").addEventListener("change",renderAnalysis);
   $("#chatForm").addEventListener("submit",e=>{e.preventDefault();send($("#chatInput").value);$("#chatInput").value="";$("#chatInput").focus();});
   $("#chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#chatForm").requestSubmit();}});
   document.addEventListener("click",e=>{
+    const view=e.target.closest("[data-analysis-view]");if(view){analysisView=view.dataset.analysisView;renderAnalysis();}
+    const chartMode=e.target.closest("[data-chart-mode]");if(chartMode){activeChart=chartMode.dataset.chartMode;renderAnalysis();}
     const action=e.target.closest("[data-action]");if(action){const name=action.dataset.action;
       if(name==="import")$("#fileInput").click();
       if(name==="export"){downloadCSV(records,"lancamentos-clareza.csv");toast("Arquivo CSV exportado.");}
@@ -127,11 +187,13 @@
       if(name==="close-demo"){ $("#demoVideo").pause();$("#demoDialog").close(); }
       if(name==="close-add")$("#addDialog").close();
       if(name==="ask-insight"){send("Quais categorias pesaram mais?");if(innerWidth<=1050)$("#chat").classList.add("open");}
+      if(name==="ask-chart"){const q=activeChart==="categories"?"Quais categorias pesaram mais nos últimos "+chartWindow+" meses?":activeChart==="balance"?"Quanto sobrou nos últimos "+chartWindow+" meses?":"Como variaram minhas despesas nos últimos "+chartWindow+" meses?";send(q);if(innerWidth<=1050)$("#chat").classList.add("open");}
+      if(name==="toggle-data"){const table=$("#chartDataTable"),expanded=action.getAttribute("aria-expanded")!=="true";table.hidden=!expanded;action.setAttribute("aria-expanded",String(expanded));action.innerHTML=expanded?'Ocultar dados do gráfico <span>−</span>':'Ver dados do gráfico <span>＋</span>';}
       if(name==="show-example"){ $("#demoVideo").pause();$("#demoDialog").close();send("Qual foi meu maior gasto neste mês?");if(innerWidth<=1050)$("#chat").classList.add("open");}
       if(name==="toggle-chat")$("#chat").classList.toggle("open");
       if(name==="clear-chat"){$("#messages").innerHTML='<div class="date-line"><span>HOJE</span></div>';toast("Conversa limpa. Seus dados continuam salvos.");}
     }
-    const question=e.target.closest("[data-question]");if(question)send(question.dataset.question);
+    const question=e.target.closest("[data-question]");if(question){send(question.dataset.question);if(innerWidth<=1050)$("#chat").classList.add("open");}
     const del=e.target.closest("[data-delete]");if(del){const row=records.find(x=>String(x.id)===del.dataset.delete);if(row&&confirm("Excluir “"+row.description+"”?")){records=records.filter(x=>String(x.id)!==del.dataset.delete);persist();render();toast("Lançamento excluído.");}}
   });
   $("#demoDialog").addEventListener("click",e=>{if(e.target===$("#demoDialog"))$("#demoDialog").close();});

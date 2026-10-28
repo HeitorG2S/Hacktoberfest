@@ -63,19 +63,55 @@
         <button class="insight-action" data-action="ask-insight">Ver análise <span>→</span></button>
       </section>
 
-      <section class="analysis" id="analises">
-        <article class="card chart-card">
-          <div class="card-head"><div><label>MOVIMENTO</label><h2>Entradas e despesas</h2><p>Acompanhe a evolução dos últimos seis meses.</p></div><span class="period">Últimos 6 meses　⌄</span></div>
-          <div class="legend"><span><i class="leg-income"></i> Entradas</span><span><i class="leg-expense"></i> Despesas</span></div>
-          <div class="chart-area"><div class="y-labels"><span id="scaleTop"></span><span id="scaleMid"></span><span></span><span>R$ 0</span></div><div class="chart" id="chart" role="img" aria-label="Comparação mensal entre entradas e despesas"></div></div>
-          <div class="chart-foot">● &nbsp; Comparação mensal · valores em reais</div>
-        </article>
-        <article class="card category-card">
-          <div class="card-head"><div><label>ONDE VOCÊ GASTA</label><h2>Despesas por categoria</h2><p>Distribuição no mês atual.</p></div><span class="dots">···</span></div>
-          <div class="category-total"><b id="categoryTotal">R$ 0,00</b><small>total de despesas</small></div>
-          <div id="categories" class="categories"></div>
-          <div class="category-foot">ⓘ &nbsp; As categorias seguem sua planilha.</div>
-        </article>
+      <section class="analysis-shell" id="analises" data-analysis-view="summary">
+        <div class="analysis-header">
+          <div><label class="analysis-eyebrow">ANÁLISE VISUAL</label><h2>Entenda o movimento do seu dinheiro</h2><p id="analysisSubtitle">Resumo calculado com os lançamentos carregados neste navegador.</p></div>
+          <div class="analysis-mode" role="tablist" aria-label="Modo de análise">
+            <button class="mode-button is-active" type="button" data-analysis-view="summary" aria-selected="true">Resumo</button>
+            <button class="mode-button" type="button" data-analysis-view="explore" aria-selected="false">Explorar dados</button>
+          </div>
+        </div>
+        <div class="chart-toolbar">
+          <div class="chart-tabs" role="tablist" aria-label="Tipo de análise">
+            <button class="chart-tab is-active" type="button" data-chart-mode="flow" aria-pressed="true"><span>↕</span> Fluxo</button>
+            <button class="chart-tab" type="button" data-chart-mode="categories" aria-pressed="false"><span>▤</span> Categorias</button>
+            <button class="chart-tab" type="button" data-chart-mode="balance" aria-pressed="false"><span>⌁</span> Saldo</button>
+          </div>
+          <div class="chart-filters">
+            <label class="filter-field"><span>Período</span><select id="chartPeriod"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option></select></label>
+            <label class="filter-field chart-style-field advanced-only"><span>Visual</span><select id="chartStyle"><option value="bar">Colunas</option><option value="line">Linhas</option></select></label>
+            <label class="filter-field category-sort-field advanced-only" hidden><span>Ordenar</span><select id="categorySort"><option value="desc">Maior primeiro</option><option value="asc">Menor primeiro</option></select></label>
+            <button class="ask-chart" type="button" data-action="ask-chart"><span>✧</span> Perguntar sobre o gráfico</button>
+          </div>
+        </div>
+        <div class="analysis-grid">
+          <article class="graph-card">
+            <div class="graph-heading">
+              <div><label id="graphEyebrow">ENTRADAS E DESPESAS</label><h3 id="graphTitle">Comparação mensal</h3><p id="graphSummary">Selecione um ponto para ver os valores daquele mês.</p></div>
+              <span class="range-pill" id="graphRange">Últimos 6 meses</span>
+            </div>
+            <div class="canvas-shell">
+              <div class="canvas-wrap"><canvas id="financeChart" role="img" aria-label="Gráfico financeiro interativo"></canvas></div>
+              <div class="chart-empty" id="chartEmpty" hidden>Nenhum lançamento no período escolhido. Importe uma planilha ou selecione outro período.</div>
+            </div>
+            <div class="graph-footer"><span class="local-indicator"><i></i> Valores em reais · atualizados neste navegador</span><button class="data-toggle" type="button" data-action="toggle-data" aria-expanded="false">Ver dados do gráfico <span>＋</span></button></div>
+            <div class="chart-data-table" id="chartDataTable" hidden><div class="chart-data-scroll"><table><thead id="chartDataHead"></thead><tbody id="chartDataBody"></tbody></table></div></div>
+          </article>
+          <aside class="analysis-aside">
+            <section class="graph-insight-card">
+              <div class="graph-insight-heading"><span>✧</span><div><label>LEITURA DO GRÁFICO</label><b id="graphInsightTitle">Resumo do período</b></div></div>
+              <p id="graphInsight">Carregando a leitura dos lançamentos...</p>
+              <div class="insight-metrics"><div><span>Despesas no período</span><b id="periodExpense">R$ 0,00</b></div><div><span>Saldo do período</span><b id="periodBalance">R$ 0,00</b></div><div><span>Lançamentos analisados</span><b id="periodCount">0</b></div></div>
+              <div class="chart-selection" id="chartSelection" aria-live="polite">Selecione um ponto do gráfico para ver mais detalhes.</div>
+            </section>
+            <section class="question-card"><label>PERGUNTAS PARA EXPLORAR</label>
+              <button type="button" data-question="Como variaram minhas despesas nos últimos 3 meses?">Como mudaram meus gastos? <span>→</span></button>
+              <button type="button" data-question="Quais categorias pesaram mais?">Quais categorias pesaram mais? <span>→</span></button>
+              <button type="button" data-question="Quanto sobrou neste mês?">Quanto sobrou neste mês? <span>→</span></button>
+            </section>
+            <p class="explore-note advanced-only">No modo Explorar, altere o período, escolha colunas ou linhas e confira os valores exatos.</p>
+          </aside>
+        </div>
       </section>
 
       <section class="card table-card" id="lancamentos">
@@ -129,6 +165,7 @@
   </div>
 </dialog>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<script src="./main.js" defer></script>
+<script src="./assets/chart.umd.min.js" defer></script>
+  <script src="./main.js" defer></script>
 </body>
 </html>
