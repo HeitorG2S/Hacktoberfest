@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, FormEvent, KeyboardEvent } from "react";
+import { useState, useCallback, useEffect, useRef, FormEvent, KeyboardEvent } from "react";
 import type { SectionProps } from "../props";
 import type { Entry, Intent, ProposedEntry, RagAnswer, RetrievedDoc, SimulationResult, Goal, Priority, ScenarioType } from "../../contracts/types";
 import { interpret } from "../../llm/client";
@@ -57,12 +57,12 @@ export function Simulador(props: SectionProps) {
     setError(null);
   }, []);
 
-  const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
-      if (!input.trim() || loading) return;
+  // Envia uma pergunta (do campo de texto ou de um atalho como "Perguntas para explorar").
+  const send = useCallback(
+    async (text: string) => {
+      if (!text.trim() || loading) return;
 
-      const userText = input.trim();
+      const userText = text.trim();
       setInput("");
       setError(null);
       setLoading(true);
@@ -111,12 +111,33 @@ export function Simulador(props: SectionProps) {
         setLoading(false);
       }
     },
-    [input, loading, state, sendContext, onChange]
+    [loading, state, sendContext, onChange]
   );
+
+  const handleSubmit = useCallback(
+    (e: FormEvent) => {
+      e.preventDefault();
+      void send(input);
+    },
+    [send, input],
+  );
+
+  // Atalhos de outras telas: window.dispatchEvent(new CustomEvent("simfin:ask", { detail: "pergunta" })).
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const q = (e as CustomEvent<string>).detail;
+      if (typeof q === "string" && q.trim()) void sendRef.current(q);
+    };
+    window.addEventListener("simfin:ask", onAsk);
+    return () => window.removeEventListener("simfin:ask", onAsk);
+  }, []);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !loading && input.trim()) {
+      // Enter envia; Shift+Enter quebra a linha.
+      if (e.key === "Enter" && !e.shiftKey && !loading && input.trim()) {
         e.preventDefault();
         handleSubmit(e as unknown as FormEvent);
       }
@@ -362,8 +383,8 @@ export function Simulador(props: SectionProps) {
       <header className="chat-head">
         <span className="chat-logo">✳</span>
         <div>
-          <b>Simulador de decisões</b>
-          <small><i /> O Gemma interpreta · o motor calcula</small>
+          <b>Converse com seus dados</b>
+          <small><i /> Assistente · o Gemma interpreta, o app calcula</small>
         </div>
         {modeChip}
       </header>
@@ -376,6 +397,7 @@ export function Simulador(props: SectionProps) {
       </div>
 
       <div className="messages" aria-live="polite">
+        <div className="date-line">HOJE</div>
         {history.length === 0 && (
           <div className="message assistant">
             <span className="msg-avatar">✳</span>
@@ -432,6 +454,7 @@ export function Simulador(props: SectionProps) {
       </div>
 
       <div className="suggestions">
+        <label>EXPERIMENTE PERGUNTAR</label>
         {EXAMPLE_PROMPTS.map((prompt, i) => (
           <button key={i} type="button" onClick={() => handleExampleClick(prompt)} title={prompt}>
             {prompt.length > 46 ? `${prompt.slice(0, 46)}…` : prompt}
@@ -444,14 +467,15 @@ export function Simulador(props: SectionProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Descreva sua decisão… (Ctrl+Enter envia)"
+          placeholder="Pergunte sobre seus dados…"
           rows={2}
           disabled={loading}
           aria-label="Descreva sua decisão"
         />
-        <button type="submit" disabled={loading || !input.trim()} aria-label="Simular">
-          {loading ? "…" : "↑"}
+        <button type="submit" disabled={loading || !input.trim()} aria-label="Enviar">
+          {loading ? "…" : "→"}
         </button>
+        <small>Enter para enviar · Shift+Enter para nova linha</small>
       </form>
     </section>
   );

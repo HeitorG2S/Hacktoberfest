@@ -155,3 +155,51 @@ export function investmentGuidance(state: FinancialState, month: string): { inve
 
   return { investable, steps };
 }
+
+// ---- Séries para os gráficos da Visão geral (todas em centavos, calculadas aqui) ----
+
+// Despesas lançadas no mês por categoria, da maior para a menor.
+export function spendingByCategory(state: FinancialState, month: string): { categorySlug: string; total: Cents; count: number }[] {
+  const map = new Map<string, { total: Cents; count: number }>();
+  for (const e of entriesOfMonth(state.entries, month)) {
+    if (e.type !== "despesa") continue;
+    const cur = map.get(e.categorySlug) ?? { total: 0, count: 0 };
+    map.set(e.categorySlug, { total: cur.total + e.amount, count: cur.count + 1 });
+  }
+  return [...map].map(([categorySlug, v]) => ({ categorySlug, ...v })).sort((a, b) => b.total - a.total);
+}
+
+// Planejado × lançado por grupo do orçamento.
+export function plannedVsSpent(state: FinancialState, month: string): { group: "fixed" | "variableEssential" | "debt"; planned: Cents; spent: Cents }[] {
+  const s = monthSummary(state, month).spentByBucket;
+  return [
+    { group: "fixed", planned: state.budget.fixed, spent: s.fixed },
+    { group: "variableEssential", planned: state.budget.variableEssential, spent: s.variableEssential },
+    { group: "debt", planned: state.budget.debtMinimums, spent: s.debt },
+  ];
+}
+
+// Disponível efetivo ao fim de cada dia do mês (considera só os lançamentos até aquele dia).
+export function dailyAvailableSeries(state: FinancialState, month: string): { day: number; available: Cents }[] {
+  const [y, m] = month.split("-").map((x) => Number.parseInt(x, 10)) as [number, number];
+  const days = new Date(y, m, 0).getDate();
+  const series: { day: number; available: Cents }[] = [];
+  for (let d = 1; d <= days; d++) {
+    const cutoff = `${month}-${String(d).padStart(2, "0")}`;
+    const partial = { ...state, entries: state.entries.filter((e) => e.date <= cutoff) };
+    series.push({ day: d, available: monthSummary(partial, month).effectiveAvailable });
+  }
+  return series;
+}
+
+// Totais do mês para os cartões: entradas (renda planejada + receitas extras) e despesas (planejadas + fora do plano).
+export function monthTotals(state: FinancialState, month: string): { income: Cents; expenses: Cents; extraIncome: Cents; entriesCount: number } {
+  const s = monthSummary(state, month);
+  const b = state.budget;
+  return {
+    income: b.income + s.extraIncome,
+    expenses: b.fixed + b.variableEssential + b.debtMinimums + s.overspend + s.spentByBucket.discretionary,
+    extraIncome: s.extraIncome,
+    entriesCount: s.entriesCount,
+  };
+}

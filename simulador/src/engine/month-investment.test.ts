@@ -115,3 +115,35 @@ describe("investimento", () => {
     expect(() => priceToCents(-1)).toThrow();
   });
 });
+
+import { dailyAvailableSeries, monthTotals, plannedVsSpent, spendingByCategory } from ".";
+
+describe("séries dos gráficos", () => {
+  const st = withEntries([
+    entry({ date: "2026-10-03", amount: 2000, categorySlug: "lazer" }),
+    entry({ date: "2026-10-03", amount: 50000, categorySlug: "mercado" }),
+    entry({ date: "2026-10-10", amount: 3000, categorySlug: "lazer" }),
+    entry({ date: "2026-10-12", amount: 10000, type: "receita", categorySlug: "outros" }),
+  ]);
+  it("gasto por categoria ordenado", () => {
+    expect(spendingByCategory(st, "2026-10")).toEqual([
+      { categorySlug: "mercado", total: 50000, count: 1 },
+      { categorySlug: "lazer", total: 5000, count: 2 },
+    ]);
+  });
+  it("planejado × lançado", () => {
+    expect(plannedVsSpent(st, "2026-10")[1]).toEqual({ group: "variableEssential", planned: 65000, spent: 50000 });
+  });
+  it("disponível dia a dia", () => {
+    const s = dailyAvailableSeries(st, "2026-10");
+    expect(s).toHaveLength(31);
+    expect(s[0]!.available).toBe(60000);
+    expect(s[2]!.available).toBe(58000); // −20 de lazer no dia 3
+    expect(s[9]!.available).toBe(55000); // −30 no dia 10
+    expect(s[11]!.available).toBe(65000); // +100 de receita no dia 12
+    expect(s[30]!.available).toBe(65000);
+  });
+  it("totais do mês", () => {
+    expect(monthTotals(st, "2026-10")).toEqual({ income: 260000, expenses: 195000, extraIncome: 10000, entriesCount: 4 });
+  });
+});

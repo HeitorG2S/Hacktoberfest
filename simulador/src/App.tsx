@@ -12,14 +12,29 @@ import { Investimentos } from "./ui/investimentos/Investimentos";
 // Layout inspirado no painel "Clareza" (painel-financeiro-interface.zip): barra lateral, centro com as
 // seções e o chat (Simulador) fixo à direita; no tablet o chat vira gaveta e no celular há barra inferior.
 const TABS = [
-  { id: "painel", label: "Visão geral", icon: "◫", title: "Mais clareza para", em: "suas escolhas.", sub: "Renda, contas e o que sobra para as suas metas.", C: Painel },
+  { id: "painel", label: "Visão geral", icon: "◫", title: "Mais clareza para", em: "suas escolhas.", sub: "Entenda o que entra, o que sai e para onde seu dinheiro está indo.", C: Painel },
   { id: "lancamentos", label: "Lançamentos", icon: "☷", title: "Registre o", em: "dia a dia.", sub: "Gastos e receitas extras do mês; o disponível se ajusta sozinho.", C: Lancamentos },
   { id: "comparador", label: "Laboratório", icon: "⚖", title: "Compare antes de", em: "decidir.", sub: "Plano do Gemma, plano do algoritmo e plano conservador, todos verificados pelo mesmo motor.", C: Comparador },
   { id: "investimentos", label: "Investimentos", icon: "▥", title: "Entenda antes de", em: "investir.", sub: "Cotações da Brapi e projeções calculadas pelo motor. Informativo, não é recomendação.", C: Investimentos },
-  { id: "objetivos", label: "Objetivos", icon: "◎", title: "Metas com", em: "prioridade.", sub: "Valor desejado, prazo e prioridade de cada objetivo.", C: Objetivos },
-  { id: "importacao", label: "Importar extrato", icon: "↑", title: "Traga seus", em: "lançamentos.", sub: "O arquivo é lido só no navegador; mostramos o que entrou, o que saiu e por quê.", C: Importacao },
+  { id: "objetivos", label: "Metas financeiras", icon: "◎", title: "Metas com", em: "prioridade.", sub: "Valor desejado, prazo e prioridade de cada objetivo.", C: Objetivos },
+  { id: "importacao", label: "Importar planilha", icon: "↑", title: "Traga seus", em: "lançamentos.", sub: "O arquivo é lido só no navegador; mostramos o que entrou, o que saiu e por quê.", C: Importacao },
 ] as const;
 type TabId = (typeof TABS)[number]["id"] | "simulador";
+
+function todayLabel(d = new Date()): string {
+  return d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
+}
+
+// Modelo de planilha (CSV do formato simfin-import/v1) com linhas de exemplo fictícias.
+function downloadTemplate() {
+  const csv = "date;description;amount;type;categorySlug;recurring\n2026-10-05;Salário;2500,00;CREDIT;salario;true\n2026-10-06;Aluguel;800,00;DEBIT;moradia;true\n2026-10-08;Mercado da semana;180,50;DEBIT;mercado;false\n";
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "modelo-lancamentos.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export function App() {
   const [state, setState, reset] = useFinancialState();
@@ -36,8 +51,13 @@ export function App() {
         setChatOpen(false);
       }
     };
+    const onAsk = () => setChatOpen(true);
     window.addEventListener("simfin:tab", onTab);
-    return () => window.removeEventListener("simfin:tab", onTab);
+    window.addEventListener("simfin:ask", onAsk);
+    return () => {
+      window.removeEventListener("simfin:tab", onTab);
+      window.removeEventListener("simfin:ask", onAsk);
+    };
   }, []);
 
   const current = TABS.find((t) => t.id === tab)!;
@@ -52,10 +72,10 @@ export function App() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark">✳</span>
+          <span className="brand-mark"><img src="/favicon.svg" alt="" /></span>
           <b>clareza<span>.</span></b>
         </div>
-        <p className="side-label">LABORATÓRIO DE DECISÕES</p>
+        <p className="side-label">SEU ESPAÇO</p>
         <nav>
           {TABS.map((t) => (
             <button key={t.id} className={tab === t.id ? "nav active" : "nav"} aria-current={tab === t.id ? "page" : undefined} onClick={() => setTab(t.id)}>
@@ -73,34 +93,54 @@ export function App() {
             </div>
           </div>
           <button className="demo-link" onClick={() => { if (window.confirm("Apagar todos os dados deste navegador?")) reset(); }}>↺ &nbsp; Limpar dados</button>
+          <div className="profile">
+            <span className="avatar">C</span>
+            <div>
+              <b>Meu espaço</b>
+              <small>{empty ? "Comece pelo orçamento" : `${state.entries.length} lançamento(s) salvos`}</small>
+            </div>
+          </div>
         </div>
       </aside>
 
       <div className="center">
         <header className="topbar">
           <div>
-            <span className="green-dot" /> <span className="crumb-root">Simulador de decisões</span> <span className="slash">/</span> <b>{current.label}</b>
+            <span className="green-dot" /> <span className="crumb-root">Seu espaço financeiro</span> <span className="slash">/</span> <b>{current.label}</b>
           </div>
           <div className="top-actions">
             <span className="privacy"><i /> Dados locais</span>
-            <button className="mobile-chat" onClick={() => setChatOpen(true)} aria-label="Abrir simulador">✳</button>
+            <button className="mobile-chat" onClick={() => setChatOpen(true)} aria-label="Abrir conversa">✳</button>
+            <span className="avatar light">C</span>
           </div>
         </header>
 
         <main className="content">
-          <section className="welcome">
-            <p className="eyebrow">✳ &nbsp; {current.label.toUpperCase()}</p>
-            <h1>
-              {current.title} <em>{current.em}</em>
-            </h1>
-            <p className="subtitle">{current.sub}</p>
+          <section className="welcome welcome-row">
+            <div>
+              <p className="eyebrow">● &nbsp; {tab === "painel" ? todayLabel() : current.label.toUpperCase()}</p>
+              <h1>
+                {current.title} <em>{current.em}</em>
+              </h1>
+              <p className="subtitle">{current.sub}</p>
+            </div>
+            {tab === "painel" && (
+              <div className="welcome-actions">
+                <button className="btn quiet" onClick={() => setTab("importacao")}>↑ &nbsp; Importar planilha</button>
+                <button className="btn" onClick={() => setTab("lancamentos")}>＋ &nbsp; Novo lançamento</button>
+              </div>
+            )}
           </section>
 
           {empty && tab === "painel" && (
-            <section className="notice">
-              <span className="demo-tag">✳ PRIMEIROS PASSOS</span>
-              <span>Informe sua renda e suas contas em Orçamento (abaixo) ou importe um extrato. Depois, registre os gastos do mês em Lançamentos.</span>
-              <button className="link-btn" onClick={() => setTab("importacao")}>Importar →</button>
+            <section className="step-card">
+              <span className="step-num">01</span>
+              <div className="grow">
+                <label>PRIMEIRO PASSO</label>
+                <p>Informe sua renda e suas contas em Orçamento, logo abaixo, ou importe uma planilha. Depois registre os gastos do mês em Lançamentos.</p>
+              </div>
+              <button className="btn" onClick={() => setTab("importacao")}>Importar planilha →</button>
+              <button className="btn-ghost" onClick={downloadTemplate}>Baixar modelo</button>
             </section>
           )}
 
@@ -122,6 +162,7 @@ export function App() {
                 </div>
               </div>
               <div className="balance-art" aria-hidden="true">
+                <div className="art-arc" />
                 <div className="art-bars"><i /><i /><i /><i /><i /><i /></div>
                 <span className="art-spark">✦</span>
               </div>
