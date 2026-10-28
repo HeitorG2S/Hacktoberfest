@@ -1,0 +1,142 @@
+{
+  "format": "simfin-import/v1",
+  "currency": "BRL",
+  "referenceMonth": "2026-10",
+  "accounts": [
+    {
+      "id": "conta-corrent",
+      "name": "Conta Corrente",
+      "type": "BANK",
+      "subtype": "CHECKING_ACCOUNT",
+      "balance": "5000.00"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "txn-1",
+      "accountId": "conta-corrent",
+      "date": "2026-10-01",
+      "description": "Salário",
+      "amount": "2500.00",
+      "type": "CREDIT",
+      "method": "transfer",
+      "categorySlug": "salario",
+      "status": "posted",
+      "recurring": false,
+      "frequency": null
+    },
+    {
+      "id": "txn-2",
+      "accountId": "conta-corrent",
+      "date": "2026-10-05",
+      "description": "Aluguel",
+      "amount": "800.00",
+      "type": "DEBIT",
+      "method": "transfer",
+      "categorySlug": "moradia",
+      "status": "posted",
+      "recurring": true,
+      "frequency": "monthly"
+    },
+    {
+      "id": "txn-3",
+      "accountId": "conta-corrent",
+      "date": "2026-10-10",
+      "description": "Contas de luz e internet",
+      "amount": "200.00",
+      "type": "DEBIT",
+      "method": "payment",
+      "categorySlug": "contas",
+      "status": "posted",
+      "recurring": true,
+      "frequency": "monthly"
+    },
+    {
+      "id": "txn-4",
+      "accountId": "conta-corrent",
+      "date": "2026-10-12",
+      "description": "Supermercado",
+      "amount": "300.00",
+      "type": "DEBIT",
+      "method": "card_purchase",
+      "categorySlug": "mercado",
+      "status": "posted",
+      "recurring": false,
+      "frequency": null
+    },
+    {
+      "id": "txn-5",
+      "accountId": "conta-corrent",
+      "date": "2026-10-15",
+      "description": "Transporte público",
+      "amount": "200.00",
+      "type": "DEBIT",
+      "method": "card_purchase",
+      "categorySlug": "transporte",
+      "status": "posted",
+      "recurring": false,
+      "frequency": null
+    },
+    {
+      "id": "txn-6",
+      "accountId": "conta-corrent",
+      "date": "2026-10-18",
+      "description": "Farmácia",
+      "amount": "150.00",
+      "type": "DEBIT",
+      "method": "card_purchase",
+      "categorySlug": "saude",
+      "status": "posted",
+      "recurring": false,
+      "frequency": null
+    },
+    {
+      "id": "txn-7",
+      "accountId": "conta-corrent",
+      "date": "2026-10-20",
+      "description": "Cinema e jantar",
+      "amount": "100.00",
+      "type": "DEBIT",
+      "method": "card_purchase",
+      "categorySlug": "lazer",
+      "status": "posted",
+      "recurring": false,
+      "frequency": null
+    }
+  ],
+  "debts": [
+    {
+      "id": "cartao",
+      "name": "Cartão de crédito",
+      "balance": "3000.00",
+      "minPayment": "250.00",
+      "monthlyRateBps": 1200
+    }
+  ],
+  "goals": [
+    {
+      "id": "reserva",
+      "name": "Reserva de emergência",
+      "target": "300.00",
+      "saved": "0",
+      "deadlineMonths": null,
+      "priority": "alta"
+    },
+    {
+      "id": "computador",
+      "name": "Computador",
+      "target": "250.00",
+      "saved": "0",
+      "deadlineMonths": null,
+      "priority": "media"
+    },
+    {
+      "id": "lazer",
+      "name": "Lazer",
+      "target": "150.00",
+      "saved": "0",
+      "deadlineMonths": null,
+      "priority": "baixa"
+    }
+  ]
+}

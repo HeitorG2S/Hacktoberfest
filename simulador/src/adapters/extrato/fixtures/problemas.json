@@ -1,0 +1,96 @@
+{
+  "format": "simfin-import/v1",
+  "currency": "BRL",
+  "referenceMonth": "2026-10",
+  "accounts": [],
+  "transactions": [
+    {
+      "id": "txn-1",
+      "date": "2026-10-01",
+      "description": "Salário válido",
+      "amount": "1000.00",
+      "type": "CREDIT",
+      "categorySlug": "salario",
+      "status": "posted"
+    },
+    {
+      "id": "txn-1",
+      "date": "2026-10-01",
+      "description": "Salário válido",
+      "amount": "1000.00",
+      "type": "CREDIT",
+      "categorySlug": "salario",
+      "status": "posted"
+    },
+    {
+      "id": "valor-invalido",
+      "date": "2026-10-02",
+      "description": "Valor inválido",
+      "amount": "12,3,4",
+      "type": "DEBIT",
+      "categorySlug": "mercado",
+      "status": "posted"
+    },
+    {
+      "id": "fora-mes",
+      "date": "2026-09-15",
+      "description": "Fora do mês",
+      "amount": "50.00",
+      "type": "DEBIT",
+      "categorySlug": "mercado",
+      "status": "posted"
+    },
+    {
+      "id": "pendente-1",
+      "date": "2026-10-03",
+      "description": "Pendente",
+      "amount": "100.00",
+      "type": "DEBIT",
+      "categorySlug": "mercado",
+      "status": "pending"
+    },
+    {
+      "date": "2026-10-04",
+      "description": "Categoria estranha",
+      "amount": "75.00",
+      "type": "DEBIT",
+      "categorySlug": "investimento",
+      "status": "posted"
+    },
+    {
+      "date": "2026-10-04",
+      "description": "CATEGORIA ESTRANHA",
+      "amount": "75.00",
+      "type": "DEBIT",
+      "categorySlug": "investimento",
+      "status": "posted"
+    },
+    {
+      "id": "sem-type",
+      "date": "2026-10-05",
+      "description": "Sem tipo",
+      "amount": "50.00",
+      "categorySlug": "mercado",
+      "status": "posted"
+    }
+  ],
+  "debts": [
+    {
+      "id": "divida-min-maior",
+      "name": "Dívida min > saldo",
+      "balance": "100.00",
+      "minPayment": "200.00",
+      "monthlyRateBps": 1000
+    }
+  ],
+  "goals": [
+    {
+      "id": "meta-target-zero",
+      "name": "Meta target zero",
+      "target": "0",
+      "saved": "0",
+      "deadlineMonths": null,
+      "priority": "media"
+    }
+  ]
+}
