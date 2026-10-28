@@ -203,7 +203,7 @@ td.num, th.num { text-align: right; }
   .balance-hero { padding: 18px 16px; }
   .balance-art { display: none; }
   .chat { width: 100vw; }
-  .mobile-bar { position: fixed; z-index: 8; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); height: 60px;
+  .mobile-bar { position: fixed; z-index: 8; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(6, 1fr); height: 60px;
     border-top: 1px solid var(--border); background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); }
   .mobile-bar button { display: grid; place-items: center; gap: 0; border: 0; background: none; color: var(--ink-muted); font-size: 10px; }
   .mobile-bar button i { font-style: normal; font-size: 16px; }

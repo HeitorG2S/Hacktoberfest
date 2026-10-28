@@ -11,4 +11,5 @@ export const DEMO_STATE: FinancialState = {
   ],
   debts: [{ id: "cartao", name: "Cartão de crédito", balance: 300000, minPayment: 25000, monthlyRateBps: 1200 }],
   reserveBalance: 0,
+  entries: [],
 };

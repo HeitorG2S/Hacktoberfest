@@ -8,7 +8,7 @@ const AVAIL = available(DEMO_STATE.budget);
 const amounts = (p: Plan) => Object.fromEntries(p.allocations.map((a) => [a.goalId, a.amount]));
 const total = (p: Plan) => p.allocations.reduce((s, a) => s + a.amount, 0);
 const intent = (over: Partial<Intent>): Intent => ({
-  scenario: "alocar_metas", goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock", ...over,
+  scenario: "alocar_metas", entries: [], tickers: [], months: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock", ...over,
 });
 const withPriority = (id: string, priority: Goal["priority"]) => goals.map((g) => (g.id === id ? { ...g, priority } : g));
 
@@ -49,9 +49,14 @@ describe("otimizador", () => {
     expect(amounts(p)).toEqual({ reserva: 30000, computador: 25000, lazer: 15000 });
   });
 
-  it("disponível zero dá plano zerado; passo maior que o disponível também", () => {
+  it("disponível zero dá plano zerado; menos que um passo vai inteiro para a meta mais prioritária", () => {
     expect(total(optimize(goals, 0))).toBe(0);
-    expect(total(optimize(goals, 900))).toBe(0);
+    expect(amounts(optimize(goals, 900))).toEqual({ reserva: 900, computador: 0, lazer: 0 });
+  });
+
+  it("pedido não múltiplo do passo é atendido exatamente quando cabe (achado da review)", () => {
+    const g: Goal[] = [{ id: "m", name: "M", target: 100000, saved: 0, deadlineMonths: 3, priority: "media" }];
+    expect(amounts(optimize(g, 33334)).m).toBe(33334);
   });
 
   it("pedido que não é múltiplo do passo pode ser atendido exatamente", () => {

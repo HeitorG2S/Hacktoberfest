@@ -44,6 +44,9 @@ describe("parseLlmText", () => {
     income_change_pct: null,
     proposed_allocation: [],
     missing: [],
+    entries: [],
+    tickers: [],
+    months: null,
   };
 
   it("retorna ok:true para JSON válido", () => {
@@ -91,6 +94,9 @@ describe("parseLlmText", () => {
       income_change_pct: null,
       proposed_allocation: [],
       missing: [],
+      entries: [],
+      tickers: [],
+      months: null,
     };
     const text = JSON.stringify(raw);
     const result = parseLlmText(text, "mock");
@@ -113,6 +119,9 @@ describe("toIntent", () => {
       income_change_pct: null,
       proposed_allocation: [{ goal: "reserva", amount: "300.00" }],
       missing: [],
+      entries: [],
+      tickers: [],
+      months: null,
     };
     const intent = toIntent(raw, "api");
     expect(intent.amount).toBe(50075);
@@ -129,6 +138,9 @@ describe("toIntent", () => {
       income_change_pct: null,
       proposed_allocation: [],
       missing: [],
+      entries: [],
+      tickers: [],
+      months: null,
     };
     const intent = toIntent(raw, "mock");
     expect(intent.scenario).toBe("desconhecido");

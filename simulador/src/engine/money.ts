@@ -89,3 +89,23 @@ export function applyBps(c: Cents, bps: number): Cents {
   if (twice > den || (twice === den && q % 2n !== 0n)) q += num < 0n ? -1n : 1n;
   return Number(q);
 }
+
+// Aplica uma taxa em partes por milhão (ppm) com arredondamento meio-para-par, sem float.
+export function applyPpm(c: Cents, ppm: number): Cents {
+  assertCents(c);
+  if (!Number.isSafeInteger(ppm)) throw new MoneyError(`taxa inválida: ${ppm}`);
+  const num = BigInt(c) * BigInt(ppm);
+  const den = 1000000n;
+  let q = num / den;
+  const r = num % den;
+  const twice = (r < 0n ? -r : r) * 2n;
+  if (twice > den || (twice === den && q % 2n !== 0n)) q += num < 0n ? -1n : 1n;
+  return Number(q);
+}
+
+// Fronteira com APIs externas que mandam preço como número (ex.: Brapi 53.1): arredonda para centavos.
+// É o único ponto onde um float de fora vira dinheiro; o resto do sistema só vê Cents.
+export function priceToCents(n: number): Cents {
+  if (typeof n !== "number" || !Number.isFinite(n) || n < 0) throw new MoneyError(`preço inválido: ${n}`);
+  return parseMoney(n.toFixed(2));
+}

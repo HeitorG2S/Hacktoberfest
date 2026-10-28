@@ -101,12 +101,84 @@ function createIntentGoal(name: string, amount: Cents | null, deadlineMonths: nu
   return { name, amount, deadlineMonths, priority };
 }
 
+const EMPTY_INTENT_FIELDS = {
+  entries: [],
+  tickers: [],
+  months: null,
+  goals: [],
+  amount: null,
+  incomeChangePct: null,
+  proposedAllocation: [],
+  missing: [],
+  source: "mock" as const,
+};
+
+// Palavra-chave → categoria (para "gastei R$ 45 no mercado").
+const ENTRY_CATEGORY_KEYWORDS: [RegExp, string][] = [
+  [/mercado|supermercado|feira|padaria|acougue/, "mercado"],
+  [/aluguel|condominio/, "moradia"],
+  [/luz|energia|agua|internet|telefone|celular|conta de/, "contas"],
+  [/uber|onibus|metro|gasolina|combustivel|estacionamento|transporte/, "transporte"],
+  [/farmacia|remedio|medico|consulta|exame|saude/, "saude"],
+  [/curso|escola|faculdade|livro/, "educacao"],
+  [/cinema|restaurante|bar|lanche|ifood|show|viagem|lazer|pizza/, "lazer"],
+  [/cartao|fatura|emprestimo|parcela|divida/, "divida"],
+  [/salario/, "salario"],
+];
+
+function entryCategory(norm: string): string {
+  for (const [re, cat] of ENTRY_CATEGORY_KEYWORDS) if (re.test(norm)) return cat;
+  return "outros";
+}
+
+function entryDescription(norm: string): string {
+  const m = norm.match(/\b(?:no|na|em|com|de)\s+(?!r\$)([a-z ]{3,40}?)(?:\s+(?:hoje|ontem|agora)|[.,!?]|$)/);
+  const d = (m?.[1] ?? "lançamento").trim();
+  return d.charAt(0).toUpperCase() + d.slice(1);
+}
+
 export function mockInterpret(userText: string): Intent {
   const norm = normalize(userText);
+
+  // Registrar lançamento: verbo no passado + valor. Cada trecho ("45,90 no mercado e 40 no cinema") vira um lançamento.
+  if (/\b(gastei|paguei|comprei|torrei)\b/.test(norm) || /\b(recebi|ganhei)\b/.test(norm)) {
+    const receita = /\b(recebi|ganhei)\b/.test(norm);
+    const segments = userText.split(/\s+e\s+|;|,\s+(?=\D)/i);
+    const entries = segments.flatMap((seg) => {
+      const amount = extractMoney(seg);
+      if (amount === null || amount <= 0) return [];
+      const segNorm = normalize(seg);
+      return [
+        {
+          description: entryDescription(segNorm),
+          amount,
+          type: receita ? ("receita" as const) : ("despesa" as const),
+          categorySlug: receita ? "outros" : entryCategory(segNorm),
+          date: null, // o mock não resolve datas relativas ("ontem"): o usuário confere na confirmação
+        },
+      ];
+    });
+    if (entries.length > 0) return { ...EMPTY_INTENT_FIELDS, scenario: "registrar_gasto", entries };
+  }
+
+  // Investimentos: ticker citado ou vocabulário de investimento.
+  const tickers = [...new Set((userText.toUpperCase().match(/\b[A-Z]{4}\d{1,2}\b/g) ?? []))].slice(0, 5);
+  if (tickers.length > 0 || /\b(investir|investimento|investimentos|acoes|acao|fii|fiis|cotacao|rendimento|render|renda fixa|tesouro|cdi|selic)\b/.test(norm)) {
+    return {
+      ...EMPTY_INTENT_FIELDS,
+      scenario: "investimento",
+      tickers,
+      amount: extractMoney(userText.replace(/\b[A-Z]{4}\d{1,2}\b/gi, "")),
+      months: extractDeadlineMonths(norm),
+    };
+  }
 
   if (hasAllThreeGoals(norm)) {
     return {
       scenario: "alocar_metas",
+      entries: [],
+      tickers: [],
+      months: null,
       goals: [
         createIntentGoal("reserva", null, null, null),
         createIntentGoal("computador", null, null, null),
@@ -114,11 +186,8 @@ export function mockInterpret(userText: string): Intent {
       ],
       amount: null,
       incomeChangePct: null,
-      proposedAllocation: [
-        { goal: "reserva", amount: 30000 },
-        { goal: "computador", amount: 20000 },
-        { goal: "lazer", amount: 10000 },
-      ],
+      // Sem modelo de IA não há "plano do Gemma": o comparador mostra só os planos do motor.
+      proposedAllocation: [],
       missing: [],
       source: "mock",
     };
@@ -130,6 +199,9 @@ export function mockInterpret(userText: string): Intent {
     const goalName = extractGoalName(norm);
     return {
       scenario: "meta_com_prazo",
+      entries: [],
+      tickers: [],
+      months: null,
       goals: [createIntentGoal(goalName, money, deadlineMonths, null)],
       amount: null,
       incomeChangePct: null,
@@ -145,6 +217,9 @@ export function mockInterpret(userText: string): Intent {
       const pct = -parseInt(pctMatch[1]!, 10);
       return {
         scenario: "perda_renda",
+        entries: [],
+        tickers: [],
+        months: null,
         goals: [],
         amount: null,
         incomeChangePct: pct,
@@ -158,6 +233,9 @@ export function mockInterpret(userText: string): Intent {
   if ((norm.includes("inesperad") || norm.includes("imprevist") || (norm.includes("emergencia") && !hasAllThreeGoals(norm))) && money !== null) {
     return {
       scenario: "despesa_inesperada",
+      entries: [],
+      tickers: [],
+      months: null,
       goals: [],
       amount: money,
       incomeChangePct: null,
@@ -170,6 +248,9 @@ export function mockInterpret(userText: string): Intent {
   if (norm.includes("divida") && norm.includes("reserva")) {
     return {
       scenario: "divida_vs_reserva",
+      entries: [],
+      tickers: [],
+      months: null,
       goals: [],
       amount: null,
       incomeChangePct: null,
@@ -183,6 +264,9 @@ export function mockInterpret(userText: string): Intent {
     const goalName = extractGoalName(norm);
     return {
       scenario: "compra",
+      entries: [],
+      tickers: [],
+      months: null,
       goals: [createIntentGoal(goalName, money, null, null)],
       amount: money,
       incomeChangePct: null,
@@ -194,6 +278,9 @@ export function mockInterpret(userText: string): Intent {
 
   return {
     scenario: "desconhecido",
+    entries: [],
+    tickers: [],
+    months: null,
     goals: [],
     amount: null,
     incomeChangePct: null,

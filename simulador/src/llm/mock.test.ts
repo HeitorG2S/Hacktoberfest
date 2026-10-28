@@ -18,18 +18,46 @@ describe("mockInterpret", () => {
     expect(intent.source).toBe("mock");
   });
 
-  it("exemplo 2: três metas -> alocar_metas com alocação 30000/20000/10000", () => {
+  it("exemplo 2: três metas -> alocar_metas sem plano inventado pelo mock", () => {
     const text = "Quero guardar dinheiro para emergências, comprar um computador e ainda ter um pouco para lazer. Encontre uma divisão equilibrada sem ultrapassar o que tenho disponível.";
     const intent = mockInterpret(text);
     expect(intent.scenario).toBe("alocar_metas");
     expect(intent.goals.map((g) => g.name).sort()).toEqual(["computador", "lazer", "reserva"]);
     expect(intent.goals.every((g) => g.amount === null)).toBe(true);
-    expect(intent.proposedAllocation).toEqual([
-      { goal: "reserva", amount: 30000 },
-      { goal: "computador", amount: 20000 },
-      { goal: "lazer", amount: 10000 },
-    ]);
+    expect(intent.proposedAllocation).toEqual([]);
     expect(intent.source).toBe("mock");
+  });
+
+  it("registrar gasto: valor, categoria e descrição", () => {
+    const i = mockInterpret("Gastei R$ 45,90 no mercado hoje");
+    expect(i.scenario).toBe("registrar_gasto");
+    expect(i.entries).toEqual([{ description: "Mercado", amount: 4590, type: "despesa", categorySlug: "mercado", date: null }]);
+  });
+
+  it("vários lançamentos numa frase", () => {
+    const i = mockInterpret("Gastei 45,90 no mercado e 40 reais no cinema hoje");
+    expect(i.entries.map((e) => [e.description, e.amount, e.categorySlug])).toEqual([
+      ["Mercado", 4590, "mercado"],
+      ["Cinema", 4000, "lazer"],
+    ]);
+  });
+
+  it("registrar receita extra", () => {
+    const i = mockInterpret("Recebi 300 reais de um freela");
+    expect(i.scenario).toBe("registrar_gasto");
+    expect(i.entries[0]).toMatchObject({ amount: 30000, type: "receita" });
+  });
+
+  it("verbo no passado sem valor não registra nada", () => {
+    expect(mockInterpret("Paguei a conta de luz").scenario).not.toBe("registrar_gasto");
+  });
+
+  it("investimento com tickers, valor e prazo", () => {
+    const i = mockInterpret("Quanto rende investir R$ 200 por mês em 12 meses? E como está PETR4 e mxrf11?");
+    expect(i.scenario).toBe("investimento");
+    expect(i.tickers).toEqual(["PETR4", "MXRF11"]);
+    expect(i.amount).toBe(20000);
+    expect(i.months).toBe(12);
   });
 
   it("perda de 30% da renda -> perda_renda com incomeChangePct -30", () => {

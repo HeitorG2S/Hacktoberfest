@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => {
   const llmMode = env.LLM_MODE === "mock" || !hasKey ? "mock" : "api";
   return {
     plugins: [react()],
-    define: { __LLM_MODE__: JSON.stringify(llmMode), __LLM_MODEL__: JSON.stringify(model) },
+    define: {
+      __LLM_MODE__: JSON.stringify(llmMode),
+      __LLM_MODEL__: JSON.stringify(model),
+    },
     server: {
       proxy: {
         "/api/llm": {

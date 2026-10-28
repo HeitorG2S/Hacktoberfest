@@ -33,8 +33,12 @@ export function parseAmount(text: string): Cents {
 }
 
 export function getBucketForTransaction(categorySlug: CategorySlug, recurring: boolean, type: "CREDIT" | "DEBIT"): BudgetBucket {
+  // Renda e dívida têm grupo próprio mesmo quando recorrentes (senão a parcela da dívida contaria em "fixas"
+  // e de novo em debtMinimums); só as demais despesas recorrentes viram "fixas".
+  const bucket = CATEGORY_BUCKET[categorySlug];
+  if (bucket === "income" || bucket === "debt") return bucket;
   if (recurring && type === "DEBIT") return "fixed";
-  return CATEGORY_BUCKET[categorySlug];
+  return bucket;
 }
 
 export function validateReferenceMonth(date: string, referenceMonth: string): boolean {

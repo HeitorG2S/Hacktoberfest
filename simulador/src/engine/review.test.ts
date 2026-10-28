@@ -32,7 +32,8 @@ describe("Invariante 1: Limites do disponível em planos otimizado e conservador
     // Disponível menor que o passo (R$ 5,00 < R$ 10,00)
     const optSmall = optimize(goals, 500);
     const totalSmall = optSmall.allocations.reduce((s, a) => s + a.amount, 0);
-    expect(totalSmall).toBe(0);
+    // Com o complemento pós-busca, o valor menor que o passo vai para a meta mais prioritária.
+    expect(totalSmall).toBe(500);
     expect(totalSmall).toBeLessThanOrEqual(500);
 
     // Disponível padrão (R$ 600,00)
@@ -58,7 +59,8 @@ describe("Invariante 1: Limites do disponível em planos otimizado e conservador
     // Disponível menor que o passo (R$ 5,00 < R$ 10,00)
     const consSmall = conservativePlan(goals, 500);
     const totalSmall = consSmall.allocations.reduce((s, a) => s + a.amount, 0);
-    expect(totalSmall).toBe(0);
+    // Com o complemento pós-busca, o valor menor que o passo vai para a meta mais prioritária.
+    expect(totalSmall).toBe(500);
     expect(totalSmall).toBeLessThanOrEqual(500);
 
     // Disponível padrão (R$ 600,00)
@@ -175,6 +177,9 @@ describe("Invariante 3: Todos os valores de saída são inteiros seguros", () =>
     // Módulo scenarios - simulate
     const sim = simulate(DEMO_STATE, {
       scenario: "compra",
+      entries: [],
+      tickers: [],
+      months: null,
       amount: 20000,
       goals: [],
       incomeChangePct: null,
@@ -235,8 +240,8 @@ describe("Invariante 4: Otimalidade do otimizador contra busca exaustiva", () =>
     }
   });
 
-  // LIMITAÇÃO CONHECIDA (achado W5, aceita): para pedidos não múltiplos de R$ 10 (ex.: R$ 15 e R$ 5, disponível R$ 20), o otimizador cobra o passo cheio (R$ 10) para cada fração de unidade, subalocando e obtendo pontuação inferior à força bruta factível
-  it.fails("invariante 4: optimize é ótimo para metas com pedidos fracionários menores que o passo", () => {
+  // CORRIGIDO (achado W5 e da review): o complemento pós-busca aloca os centavos que a busca em passos deixava de fora.
+  it("invariante 4: optimize é ótimo para metas com pedidos fracionários menores que o passo", () => {
     const fractionalGoals: Goal[] = [
       { id: "a", name: "A", target: 1500, saved: 0, deadlineMonths: null, priority: "alta" },
       { id: "b", name: "B", target: 500, saved: 0, deadlineMonths: null, priority: "alta" },
@@ -427,6 +432,9 @@ describe("Invariante 8: simulate robustez com valores extremos e explicação n�
       for (const amount of extremeAmounts) {
         const intent: Intent = {
           scenario,
+          entries: [],
+          tickers: [],
+          months: null,
           goals:
             scenario === "meta_com_prazo"
               ? [{ name: "computador", amount: amount ?? 30000, deadlineMonths: 6, priority: "alta" }]

@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import { useFinancialState } from "./store";
-import { available, formatMoney, totalRequested } from "./engine";
-import { isDemoData } from "./llm/context";
+import { currentMonth, formatMoney, monthSummary, totalRequested } from "./engine";
 import { Painel } from "./ui/painel/Painel";
 import { Objetivos } from "./ui/objetivos/Objetivos";
 import { Importacao } from "./ui/importacao/Importacao";
 import { Simulador } from "./ui/simulador/Simulador";
 import { Comparador } from "./ui/comparador/Comparador";
+import { Lancamentos } from "./ui/lancamentos/Lancamentos";
+import { Investimentos } from "./ui/investimentos/Investimentos";
 
 // Layout inspirado no painel "Clareza" (painel-financeiro-interface.zip): barra lateral, centro com as
 // seções e o chat (Simulador) fixo à direita; no tablet o chat vira gaveta e no celular há barra inferior.
 const TABS = [
   { id: "painel", label: "Visão geral", icon: "◫", title: "Mais clareza para", em: "suas escolhas.", sub: "Renda, contas e o que sobra para as suas metas.", C: Painel },
+  { id: "lancamentos", label: "Lançamentos", icon: "☷", title: "Registre o", em: "dia a dia.", sub: "Gastos e receitas extras do mês; o disponível se ajusta sozinho.", C: Lancamentos },
   { id: "comparador", label: "Laboratório", icon: "⚖", title: "Compare antes de", em: "decidir.", sub: "Plano do Gemma, plano do algoritmo e plano conservador, todos verificados pelo mesmo motor.", C: Comparador },
+  { id: "investimentos", label: "Investimentos", icon: "▥", title: "Entenda antes de", em: "investir.", sub: "Cotações da Brapi e projeções calculadas pelo motor. Informativo, não é recomendação.", C: Investimentos },
   { id: "objetivos", label: "Objetivos", icon: "◎", title: "Metas com", em: "prioridade.", sub: "Valor desejado, prazo e prioridade de cada objetivo.", C: Objetivos },
   { id: "importacao", label: "Importar extrato", icon: "↑", title: "Traga seus", em: "lançamentos.", sub: "O arquivo é lido só no navegador; mostramos o que entrou, o que saiu e por quê.", C: Importacao },
 ] as const;
@@ -39,9 +42,11 @@ export function App() {
 
   const current = TABS.find((t) => t.id === tab)!;
   const Current = current.C;
-  const avail = available(state.budget);
+  const month = currentMonth();
+  const summary = monthSummary(state, month);
+  const avail = summary.effectiveAvailable;
   const requested = totalRequested(state.goals);
-  const demo = isDemoData(state);
+  const empty = state.budget.income === 0 && state.entries.length === 0;
 
   return (
     <div className="shell">
@@ -67,7 +72,7 @@ export function App() {
               <small>Salvos neste navegador</small>
             </div>
           </div>
-          <button className="demo-link" onClick={reset}>↺ &nbsp; Restaurar demonstração</button>
+          <button className="demo-link" onClick={() => { if (window.confirm("Apagar todos os dados deste navegador?")) reset(); }}>↺ &nbsp; Limpar dados</button>
         </div>
       </aside>
 
@@ -91,22 +96,25 @@ export function App() {
             <p className="subtitle">{current.sub}</p>
           </section>
 
-          {demo && (
+          {empty && tab === "painel" && (
             <section className="notice">
-              <span className="demo-tag">△ DEMONSTRAÇÃO</span>
-              <span>Os valores exibidos são fictícios. Importe um extrato para usar os seus.</span>
+              <span className="demo-tag">✳ PRIMEIROS PASSOS</span>
+              <span>Informe sua renda e suas contas em Orçamento (abaixo) ou importe um extrato. Depois, registre os gastos do mês em Lançamentos.</span>
               <button className="link-btn" onClick={() => setTab("importacao")}>Importar →</button>
             </section>
           )}
 
-          {tab === "painel" && (
+          {tab === "painel" && !empty && (
             <section className="balance-hero" aria-label="Disponível no mês">
               <div className="balance-copy">
                 <div className="balance-head">
                   <label>DISPONÍVEL NO MÊS</label>
                   <span className="hero-status"><i /> CALCULADO PELO MOTOR</span>
                 </div>
-                <p>Renda − contas fixas − essenciais − mínimo de dívidas</p>
+                <p>
+                  Renda − contas fixas − essenciais − mínimo de dívidas
+                  {summary.entriesCount > 0 ? `, ajustado por ${summary.entriesCount} lançamento(s) de ${month}` : ""}
+                </p>
                 <strong className="num">{formatMoney(avail)}</strong>
                 <div className="balance-bottom">
                   <span>Metas pedem {formatMoney(requested)}</span>
@@ -133,7 +141,7 @@ export function App() {
       </aside>
 
       <nav className="mobile-bar" aria-label="Navegação móvel">
-        {TABS.map((t) => (
+        {TABS.filter((t) => t.id !== "importacao").map((t) => (
           <button key={t.id} className={tab === t.id && !chatOpen ? "active" : ""} onClick={() => { setTab(t.id); setChatOpen(false); }}>
             <i>{t.icon}</i>
             <span>{t.label.split(" ")[0]}</span>

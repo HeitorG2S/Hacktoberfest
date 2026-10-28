@@ -1,16 +1,20 @@
 import { useState, useCallback, useEffect, FormEvent, KeyboardEvent } from "react";
 import type { SectionProps } from "../props";
-import type { Intent, SimulationResult, Goal, Priority, ScenarioType } from "../../contracts/types";
+import type { Entry, Intent, ProposedEntry, RagAnswer, RetrievedDoc, SimulationResult, Goal, Priority, ScenarioType } from "../../contracts/types";
 import { interpret } from "../../llm/client";
-import { simulate, matchGoal } from "../../engine";
+import { simulate, matchGoal, currentMonth, today } from "../../engine";
+import { retrieveDocs } from "../../rag/retrieve";
+import { answerWithDocs } from "../../rag/answer";
 import { buildLlmContext, isDemoData } from "../../llm/context";
 import { setLastRun } from "../session";
 import { formatMoney } from "../../engine/money";
 import { scenarioLabel, priorityLabel } from "./labels";
 
 const EXAMPLE_PROMPTS = [
-  "Quero guardar dinheiro para emergências, comprar um computador e ainda ter um pouco para lazer. Encontre uma divisão equilibrada sem ultrapassar o que tenho disponível.",
-  "Quero comprar um computador de R$ 1.800 em seis meses, sem deixar de guardar dinheiro",
+  "Gastei R$ 45,90 no mercado hoje",
+  "Como está a PETR4? Quantas cotas compro com R$ 500?",
+  "Quanto rende guardar R$ 200 por mês durante 2 anos?",
+  "Divida o que sobrou do mês entre as minhas metas, sem ultrapassar o disponível.",
   "Consigo comprar um celular de R$ 2.000 este mês?",
   "Se surgir uma despesa inesperada de R$ 400, de onde tiro o dinheiro?",
   "É melhor acelerar o pagamento da dívida ou montar uma reserva?",
@@ -22,7 +26,17 @@ interface ChatMessage {
   content: string;
   intent?: Intent;
   result?: SimulationResult;
+  // registrar_gasto: lançamentos propostos pelo agente, que só entram com a confirmação do usuário
+  proposed?: ProposedEntry[];
+  entryStatus?: "pendente" | "adicionado" | "cancelado";
+  // investimento: resposta do RAG com a Brapi
+  rag?: { answer: RagAnswer; docs: RetrievedDoc[]; errors: string[] };
 }
+
+const CATEGORY_LABEL: Record<string, string> = {
+  salario: "Salário", moradia: "Moradia", contas: "Contas", mercado: "Mercado", transporte: "Transporte",
+  saude: "Saúde", educacao: "Educação", lazer: "Lazer", divida: "Dívida", outros: "Outros",
+};
 
 export function Simulador(props: SectionProps) {
   const { state, onChange } = props;
@@ -30,12 +44,9 @@ export function Simulador(props: SectionProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<ChatMessage[]>([]);
+  // Padrão: NÃO enviar o orçamento ao Gemma (dado real do usuário); ele marca se quiser.
   const [sendContext, setSendContext] = useState(() => isDemoData(state));
   const [lastIntentSource, setLastIntentSource] = useState<"api" | "mock" | null>(null);
-
-  useEffect(() => {
-    setSendContext(isDemoData(state));
-  }, [state]);
 
   const handleExampleClick = useCallback((prompt: string) => {
     setInput(prompt);
@@ -56,12 +67,29 @@ export function Simulador(props: SectionProps) {
       setHistory((h) => [...h, userMsg]);
 
       try {
-        const goalNames = state.goals.map((g) => g.name);
+        // Privacidade (regra 2 do projeto): sem a opção marcada, nem os nomes das metas vão ao Gemma;
+        // a correspondência com as metas cadastradas é feita localmente pelo motor (matchGoal).
+        const goalNames = sendContext ? state.goals.map((g) => g.name) : [];
         const context = sendContext ? buildLlmContext(state) : undefined;
-        const intent = await interpret(userText, goalNames, { context });
-
+        const intent = await interpret(userText, goalNames, { context, todayIso: today() });
         setLastIntentSource(intent.source);
-        const result = simulate(state, intent);
+
+        if (intent.scenario === "registrar_gasto") {
+          const msg: ChatMessage = intent.entries.length
+            ? { role: "assistant", content: "", intent, proposed: intent.entries, entryStatus: "pendente" }
+            : { role: "assistant", content: "Entendi que você quer registrar um lançamento, mas não identifiquei o valor. Ex.: \"gastei R$ 45 no mercado\"." };
+          setHistory((h) => [...h, msg]);
+          return;
+        }
+
+        if (intent.scenario === "investimento") {
+          const { docs, errors } = await retrieveDocs(intent, state, { month: currentMonth(), includeBudget: sendContext });
+          const answer = await answerWithDocs(userText, docs, { errors, mode: intent.source === "mock" ? "mock" : undefined });
+          setHistory((h) => [...h, { role: "assistant", content: "", intent, rag: { answer, docs, errors } }]);
+          return;
+        }
+
+        const result = simulate(state, intent, { month: currentMonth() });
 
         const assistantMsg: ChatMessage = { role: "assistant", content: "", intent, result };
         setHistory((h) => [...h, assistantMsg]);
@@ -85,6 +113,90 @@ export function Simulador(props: SectionProps) {
       }
     },
     [input, loading, handleSubmit]
+  );
+
+  const confirmEntries = (index: number) => {
+    const msg = history[index];
+    if (!msg?.proposed || msg.entryStatus !== "pendente") return;
+    const existing = new Set(state.entries.map((e) => e.id));
+    const added: Entry[] = msg.proposed.map((p) => {
+      let id = crypto.randomUUID();
+      while (existing.has(id)) id = crypto.randomUUID();
+      existing.add(id);
+      const description = p.description.charAt(0).toUpperCase() + p.description.slice(1);
+      return { id, date: p.date ?? today(), description, amount: p.amount, type: p.type, categorySlug: p.categorySlug, source: "agente" };
+    });
+    onChange({ ...state, entries: [...state.entries, ...added] });
+    setHistory((h) => h.map((m, i) => (i === index ? { ...m, entryStatus: "adicionado" } : m)));
+  };
+
+  const cancelEntries = (index: number) => setHistory((h) => h.map((m, i) => (i === index ? { ...m, entryStatus: "cancelado" } : m)));
+
+  const renderEntryConfirm = (msg: ChatMessage, index: number) => (
+    <div className="card">
+      <h3>Registrar {msg.proposed!.length === 1 ? "lançamento" : `${msg.proposed!.length} lançamentos`}?</h3>
+      <table>
+        <tbody>
+          {msg.proposed!.map((p, k) => (
+            <tr key={k}>
+              <td>{p.date ? p.date.split("-").reverse().join("/") : "hoje"}</td>
+              <td>
+                {p.description}
+                <br />
+                <span className="muted">{CATEGORY_LABEL[p.categorySlug] ?? p.categorySlug}</span>
+              </td>
+              <td className="num" style={{ color: p.type === "receita" ? "var(--primary)" : "var(--ink)" }}>
+                {p.type === "receita" ? "+" : "−"} {formatMoney(p.amount)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {msg.entryStatus === "pendente" ? (
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+          <button className="btn" onClick={() => confirmEntries(index)}>Adicionar</button>
+          <button className="btn-ghost" onClick={() => cancelEntries(index)}>Cancelar</button>
+        </div>
+      ) : (
+        <p style={{ margin: "0.75rem 0 0" }}>
+          {msg.entryStatus === "adicionado" ? (
+            <>
+              <span className="chip">Adicionado</span>{" "}
+              <button className="link-btn" onClick={() => window.dispatchEvent(new CustomEvent("simfin:tab", { detail: "lancamentos" }))}>Ver lançamentos →</button>
+            </>
+          ) : (
+            <span className="chip warn">Cancelado</span>
+          )}
+        </p>
+      )}
+      <p className="muted" style={{ fontSize: "12px", margin: "0.5rem 0 0" }}>O assistente só registra depois da sua confirmação. Confira valor e categoria.</p>
+    </div>
+  );
+
+  const renderRag = (rag: NonNullable<ChatMessage["rag"]>) => (
+    <div className="card-insight">
+      <h3>✦ Resposta com dados da Brapi</h3>
+      <p style={{ margin: "0 0 0.5rem" }}>{rag.answer.answer}</p>
+      <p className="muted" style={{ fontSize: "12px", margin: "0 0 0.25rem" }}>
+        {rag.answer.source === "api" ? "Redigido pelo Gemma a partir das fontes abaixo; números conferidos pelo app." : "Montado diretamente das fontes abaixo."}
+      </p>
+      {rag.docs.length > 0 && (
+        <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.1rem", fontSize: "12px" }}>
+          {rag.docs
+            .filter((d) => rag.answer.citations.includes(d.id))
+            .map((d) => (
+              <li key={d.id}>
+                <span className={d.source === "brapi" ? "chip" : "chip warn"}>{d.source === "brapi" ? "Brapi" : "Motor"}</span>{" "}
+                {d.url ? <a href={d.url} target="_blank" rel="noreferrer">{d.title}</a> : d.title}
+              </li>
+            ))}
+        </ul>
+      )}
+      {rag.errors.length > 0 && <p style={{ color: "var(--error)", fontSize: "12px", margin: "0.5rem 0 0" }}>{rag.errors.join(" · ")}</p>}
+      <button className="btn-ghost" style={{ marginTop: "0.75rem" }} onClick={() => window.dispatchEvent(new CustomEvent("simfin:tab", { detail: "investimentos" }))}>
+        Abrir Investimentos →
+      </button>
+    </div>
   );
 
   const renderInterpretation = (intent: Intent) => {
@@ -253,8 +365,8 @@ export function Simulador(props: SectionProps) {
           <div className="message assistant">
             <span className="msg-avatar">✳</span>
             <div className="bubble">
-              Descreva uma decisão em linguagem natural, por exemplo uma compra, uma meta com prazo ou uma perda de renda.
-              Eu interpreto o pedido e o motor simula as consequências antes de você decidir.
+              Posso registrar seus gastos ("gastei R$ 45 no mercado"), consultar cotações na Brapi ("como está a PETR4?")
+              e simular decisões (uma compra, uma meta com prazo, uma perda de renda). Eu interpreto; as contas são do motor do app.
             </div>
           </div>
         )}
@@ -267,7 +379,11 @@ export function Simulador(props: SectionProps) {
             <div key={i} className="message assistant">
               <span className="msg-avatar">✳</span>
               <div className="bubble wide">
-                {msg.intent && msg.result ? (
+                {msg.proposed ? (
+                  renderEntryConfirm(msg, i)
+                ) : msg.rag ? (
+                  renderRag(msg.rag)
+                ) : msg.intent && msg.result ? (
                   <>
                     {renderInterpretation(msg.intent)}
                     {renderEngineResult(msg.result)}

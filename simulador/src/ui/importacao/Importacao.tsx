@@ -48,7 +48,21 @@ function Importacao(props: SectionProps) {
 
   function applyResult() {
     if (result) {
-      props.onChange(result.state);
+      // Importar atualiza o orçamento. CSV só traz transações: metas, dívidas e reserva atuais ficam.
+      // JSON substitui metas e dívidas apenas quando o arquivo traz alguma. Lançamentos e taxa sempre ficam.
+      const r = result.state;
+      const cur = props.state;
+      props.onChange(
+        kind === "csv"
+          ? { ...cur, budget: r.budget }
+          : {
+              ...r,
+              goals: r.goals.length ? r.goals : cur.goals,
+              debts: r.debts.length ? r.debts : cur.debts,
+              entries: cur.entries,
+              investment: cur.investment,
+            },
+      );
     }
   }
 

@@ -10,6 +10,7 @@ import type {
   SimulationResult,
 } from "../contracts/types";
 import { available, totalRequested } from "./budget";
+import { monthSummary } from "./month";
 import { applyBps, ceilDiv, formatMoney, sum } from "./money";
 import { conservativePlan, optimize } from "./optimizer";
 import { evaluatePlan } from "./validate";
@@ -133,13 +134,21 @@ export function projectDebt(debt: Debt, monthlyPayment: Cents, maxMonths = 600):
 
 // ---- simulação ----
 
-export function simulate(state: FinancialState, intent: Intent): SimulationResult {
-  const baseAvail = available(state.budget);
+// opts.month (AAAA-MM): considera os lançamentos do mês (gastos fora do plano e receitas extras).
+export function simulate(state: FinancialState, intent: Intent, opts: { month?: string } = {}): SimulationResult {
+  const summary = opts.month ? monthSummary(state, opts.month) : null;
+  const baseAvail = summary ? summary.effectiveAvailable : available(state.budget);
   const { goals, notes } = applyIntentGoals(state.goals, intent);
   const requested = totalRequested(goals);
   const consequences: Consequence[] = [];
   const explanation: string[] = [...notes];
   let avail = baseAvail;
+  if (summary && summary.entriesCount > 0 && summary.effectiveAvailable !== summary.plannedAvailable) {
+    consequences.push({ label: "Disponível planejado → após os lançamentos do mês", before: summary.plannedAvailable, after: summary.effectiveAvailable });
+    explanation.push(
+      `Considerei os ${summary.entriesCount} lançamentos de ${summary.month}: o disponível passou de ${formatMoney(summary.plannedAvailable)} para ${formatMoney(summary.effectiveAvailable)}.`,
+    );
+  }
 
   switch (intent.scenario) {
     case "compra": {
@@ -187,8 +196,10 @@ export function simulate(state: FinancialState, intent: Intent): SimulationResul
     }
     case "perda_renda": {
       const pct = intent.incomeChangePct ?? 0;
-      const newIncome = state.budget.income + applyBps(state.budget.income, pct * 100);
-      avail = available({ ...state.budget, income: newIncome });
+      const incomeDelta = applyBps(state.budget.income, pct * 100);
+      const newIncome = state.budget.income + incomeDelta;
+      // Parte do disponível já ajustado pelos lançamentos do mês (baseAvail), não do planejado.
+      avail = baseAvail + incomeDelta;
       consequences.push({ label: "Renda líquida", before: state.budget.income, after: newIncome });
       consequences.push({ label: "Disponível no mês", before: baseAvail, after: avail });
       if (avail < 0)

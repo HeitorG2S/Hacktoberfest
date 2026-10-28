@@ -220,6 +220,7 @@ export function importJson(raw: string, referenceMonth?: string): ImportResult {
     goals,
     debts,
     reserveBalance,
+    entries: [],
   };
 
   return {

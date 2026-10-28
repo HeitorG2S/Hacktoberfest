@@ -35,6 +35,7 @@ export async function interpret(
     fetchImpl?: typeof fetch;
     timeoutMs?: number;
     context?: LlmContext; // resumo do orçamento (só com permissão; ver context.ts)
+    todayIso?: string; // para o modelo resolver "ontem", "dia 5"
   }
 ): Promise<Intent> {
   const mode = opts?.mode ?? getDefaultMode();
@@ -44,7 +45,7 @@ export async function interpret(
 
   const fetchImpl = opts?.fetchImpl ?? fetch;
   const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const prompt = buildPrompt(userText, goalNames, opts?.context);
+  const prompt = buildPrompt(userText, goalNames, opts?.context, opts?.todayIso);
   const url = `/api/llm`;
 
   const body = {
