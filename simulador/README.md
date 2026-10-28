@@ -1,6 +1,6 @@
 # Simulador de decisões (simulador/)
 
-Instalação, configuração do Gemma, privacidade, créditos e checklist de submissão estão no [README da raiz](../README.md). Aqui fica o resumo técnico.
+Instalação, configuração do Gemma, privacidade e créditos estão no [README da raiz](../README.md). Aqui fica o resumo técnico.
 
 ## Arquitetura (3 camadas separadas)
 

@@ -74,13 +74,6 @@ Partimos do starter (Gemma 4 pela Gemini API, saída em JSON validada, revisão 
 - **Importação** de planilhas (JSON/CSV) com resumo do que foi aceito, descartado e por quê; exportação CSV reimportável e protegida contra fórmulas.
 - **Interface** no visual Clareza, com gráficos (Chart.js) e laboratório de cenários lado a lado.
 
-## Antes de submeter
-
-- [ ] [Open-Source AI](https://hacktoberfest-handbook.mlh.com/fest-planning-guide/open-source-prize-categories): uso relevante de IA aberta/pesos abertos, **GitHub público** (hoje o repositório é privado: o dono, HeitorG2S, precisa torná-lo público), licença aberta ([MIT](LICENSE)) e demonstração com explicação do trabalho original (seção acima).
-- [ ] [Gemma](https://hacktoberfest-handbook.mlh.com/hack-days-partner-modules/partner-challenge-google-gemma): demonstrar integração real pela Gemini API e identificar o modelo no README (`gemma-4-26b-a4b-it`).
-- [ ] Creditar o starter, descrever as mudanças próprias e respeitar o início autorizado pela organização.
-- [ ] [OrganizerHQ](https://hacktoberfest-handbook.mlh.com/project-submissions-and-judging-for-hacktoberfest-hack-day): registrar/check-in; uma pessoa submete uma vez, selecionando ambos os desafios se elegíveis e disponíveis. URL hospedada é opcional; demonstre localmente.
-
 ## Créditos
 
 - Base: [gemma-hackday-starter](https://github.com/ricard0mat0s/gemma-hackday-starter) (MIT). Seguimos a estrutura do repositório e as práticas: chave só no ambiente local, Gemma pela Gemini API sem depender do modo estruturado, texto do usuário tratado como dado não confiável, mensagens de erro por código da API, testes offline, dados fictícios e CSV protegido contra fórmulas. O código do simulador é nosso, em TypeScript.
