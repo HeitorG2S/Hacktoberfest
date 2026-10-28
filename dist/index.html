@@ -24,40 +24,46 @@
 
 <main>
   <section class="hero" id="inicio">
-    <div class="hero-grain" aria-hidden="true"></div>
+    <div class="hero-ambient hero-ambient-one" aria-hidden="true"></div>
+    <div class="hero-ambient hero-ambient-two" aria-hidden="true"></div>
     <div class="hero-copy">
       <p class="eyebrow"><span></span> SEU DINHEIRO, MAIS FÁCIL DE ENTENDER</p>
-      <h1>Sua planilha.<br><em>Uma resposta mais clara.</em></h1>
-      <p class="hero-description">Importe seus registros, escolha uma pergunta e veja o gráfico mudar junto. O Clareza organiza entradas, despesas e categorias no mesmo lugar.</p>
+      <h1><span class="hero-title-line">Sua planilha.</span><span class="hero-title-line"><em>Uma resposta mais clara.</em></span></h1>
+      <p class="hero-description">Importe seus registros, faça uma pergunta e veja entradas, despesas e categorias em uma análise visual simples.</p>
       <div class="hero-actions">
         <a class="button primary" href="./dashboard.html">Abrir o painel <span aria-hidden="true">↗</span></a>
-        <a class="button secondary" href="#demonstracao"><span aria-hidden="true">▷</span> Experimentar a demonstração</a>
+        <a class="button secondary" id="heroDemoButton" href="#heroVideoCard"><span class="play-symbol" aria-hidden="true">▶</span> Ver demonstração</a>
       </div>
       <div class="hero-reassurance"><span><i>✓</i> CSV e TSV</span><span><i>✓</i> Processamento local</span><span><i>✓</i> Sem conexão bancária</span></div>
-      <p class="hero-footnote">Protótipo front-end. O exemplo usa valores fictícios.</p>
+      <p class="hero-footnote">Protótipo front-end · os valores do vídeo são ilustrativos.</p>
     </div>
 
     <div class="hero-visual">
-      <div class="hero-spark hero-spark-one" aria-hidden="true"></div><div class="hero-spark hero-spark-two" aria-hidden="true"></div>
-      <div class="hero-video-card">
-        <div class="video-chrome"><span class="window-dots"><i></i><i></i><i></i></span><span>UMA VOLTA PELO PAINEL</span><span class="video-status"><i></i> PRÉVIA</span></div>
+      <div class="hero-spark hero-spark-one" aria-hidden="true"></div>
+      <div class="hero-spark hero-spark-two" aria-hidden="true"></div>
+      <div class="hero-video-card" id="heroVideoCard">
+        <div class="video-chrome">
+          <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="video-window-label">CLAREZA <i>/</i> APRESENTAÇÃO</span>
+          <span class="video-status"><i></i> VÍDEO ORIGINAL</span>
+        </div>
         <div class="video-wrap">
-          <video id="heroVideo" autoplay muted playsinline controls preload="auto" poster="./assets/financeiro-demo-poster.jpg" aria-label="Vídeo de apresentação do painel financeiro">
+          <video id="heroVideo" autoplay muted playsinline controls preload="metadata" poster="./assets/financeiro-demo-poster.jpg" aria-label="Vídeo de apresentação do painel financeiro">
             <source src="./assets/financeiro-demo.mp4" type="video/mp4">
             Seu navegador não conseguiu abrir o vídeo. <a href="./assets/financeiro-demo.mp4">Baixar a demonstração</a>.
           </video>
-          <a class="video-end-action" id="videoEndAction" href="./dashboard.html?example=1" hidden>Ver a análise de exemplo <span aria-hidden="true">→</span></a>
-          <button class="video-replay" type="button" data-replay hidden>Recomeçar vídeo</button>
+          <a class="video-end-action" id="videoEndAction" href="./dashboard.html?example=1" hidden>Explorar a análise de exemplo <span aria-hidden="true">→</span></a>
+          <button class="video-replay" type="button" data-replay hidden>Reproduzir vídeo</button>
         </div>
-        <div class="video-caption"><span>Veja como a planilha vira análise</span><span>Valores ilustrativos</span></div>
+        <div class="video-caption"><span>Uma volta pelo painel financeiro</span><span>Dados demonstrativos</span></div>
       </div>
       <div class="hero-conversation" aria-label="Exemplo de pergunta no assistente">
         <span class="conversation-mark">✳</span>
         <div class="conversation-copy"><small>VOCÊ PERGUNTA</small><b>Quais categorias pesaram mais?</b></div>
         <span class="conversation-arrow" aria-hidden="true">↗</span>
-        <div class="conversation-answer"><i></i> O painel destaca as categorias e atualiza o gráfico.</div>
+        <div class="conversation-answer"><i></i> Leitura calculada a partir dos lançamentos.</div>
       </div>
-      <p class="video-hint">O botão para abrir a amostra aparece quando o vídeo termina.</p>
+      <p class="video-hint"><span aria-hidden="true">✦</span> O botão para abrir a análise aparece no final do vídeo.</p>
     </div>
   </section>
 

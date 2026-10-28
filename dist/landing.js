@@ -3,6 +3,7 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const video = $("#heroVideo");
+  const heroDemoButton = $("#heroDemoButton");
   const endAction = $("#videoEndAction");
   const replay = $("[data-replay]");
   const nav = $("#mainNav");
@@ -155,6 +156,8 @@
     replay.addEventListener("click",() => { video.currentTime = 0; video.play()?.catch(() => {}); });
   }
 
+  if (heroDemoButton && video) { heroDemoButton.addEventListener("click",(event) => { event.preventDefault(); const card=$("#heroVideoCard"); card?.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"}); const restart=() => { if(video.ended||video.currentTime>.15)video.currentTime=0; const playback=video.play(); playback?.catch(() => { if(replay)replay.hidden=false; }); }; window.setTimeout(restart,reduceMotion?0:320); if(!reduceMotion&&window.gsap&&card)window.gsap.fromTo(card,{scale:.985,boxShadow:"0 0 0 0 rgba(17,126,78,0)"},{scale:1,boxShadow:"0 0 0 5px rgba(17,126,78,.16)",duration:.38,yoyo:true,repeat:1,ease:"power2.out",clearProps:"transform,boxShadow"}); const anime=window.anime;if(!reduceMotion&&anime?.animate)anime.animate(heroDemoButton,{scale:[.98,1],duration:260,ease:"outQuad"}); }); }
+
   if (menu && nav) {
     menu.addEventListener("click",() => {
       const opened = nav.classList.toggle("open");
@@ -204,12 +207,18 @@
   if (!reduceMotion && window.gsap) {
     const gsap = window.gsap;
     const intro = gsap.timeline({defaults:{ease:"power3.out"}});
-    intro.from(".site-header",{y:-16,autoAlpha:0,duration:.5})
-      .from(".hero-copy .eyebrow",{y:12,autoAlpha:0,duration:.42},"-=.22")
-      .from(".hero h1",{y:25,autoAlpha:0,duration:.65},"-=.2")
-      .from(".hero-description,.hero-actions,.hero-reassurance,.hero-footnote",{y:14,autoAlpha:0,duration:.42,stagger:.08},"-=.3")
-      .from(".hero-video-card",{y:23,autoAlpha:0,scale:.985,duration:.7},"-=.48")
-      .from(".hero-conversation",{y:12,autoAlpha:0,duration:.4},"-=.3");
+    intro.from(".site-header",{y:-14,autoAlpha:0,duration:.48})
+      .from(".hero .eyebrow",{y:12,autoAlpha:0,duration:.4},"-=.2")
+      .from(".hero-title-line",{y:24,autoAlpha:0,duration:.62,stagger:.12},"-=.16")
+      .from(".hero-description,.hero-actions,.hero-reassurance,.hero-footnote",{y:12,autoAlpha:0,duration:.4,stagger:.075},"-=.24")
+      .from(".hero-video-card",{y:34,scale:.975,filter:"blur(6px)",autoAlpha:0,duration:.82,clearProps:"transform,opacity,filter"},"-=.28")
+      .from(".hero-conversation",{y:12,autoAlpha:0,duration:.42},"-=.28");
+    gsap.to(".hero-ambient-one",{scale:1.08,duration:7,yoyo:true,repeat:-1,ease:"sine.inOut",transformOrigin:"center"});
+    gsap.to(".hero-ambient-two",{x:-13,y:11,duration:8,yoyo:true,repeat:-1,ease:"sine.inOut"});
+    gsap.to(".hero-spark-one",{y:-9,rotation:5,duration:5.5,yoyo:true,repeat:-1,ease:"sine.inOut"});
+    gsap.to(".hero-spark-two",{y:8,rotation:-4,duration:7,yoyo:true,repeat:-1,ease:"sine.inOut"});
+    gsap.to(".hero-conversation",{y:-5,duration:3.6,yoyo:true,repeat:-1,ease:"sine.inOut",delay:3.2});
+
     if ("IntersectionObserver" in window) {
       const revealObserver = new IntersectionObserver(entries => entries.forEach(entry => {
         if (!entry.isIntersecting) return;
