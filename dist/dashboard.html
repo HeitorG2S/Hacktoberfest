@@ -41,7 +41,7 @@
         <div class="actions"><button class="btn quiet" data-action="play-demo">▷ &nbsp; Ver demonstração</button><button class="btn primary" id="addBtn">＋ &nbsp; Novo lançamento</button></div>
       </section>
 
-      <section class="notice"><span class="demo-tag">△ DEMONSTRAÇÃO</span><span id="dataNotice">Os valores exibidos são fictícios. Importe sua planilha para começar.</span><button class="link-btn" data-action="import">Importar planilha&nbsp; →</button></section>
+      <section class="notice onboarding-strip" aria-label="Comece com seus dados"><span class="onboarding-icon">01</span><div class="onboarding-copy"><span class="demo-tag">PRIMEIRO PASSO</span><span id="dataNotice">Os valores são fictícios. Importe uma planilha CSV ou TSV ou crie seu primeiro lançamento.</span></div><div class="onboarding-actions"><button class="link-btn import-link" data-action="import">Importar planilha&nbsp; →</button><button class="link-btn template-link" data-action="template">Baixar modelo</button></div></section>
 
       <section class="balance-hero" aria-label="Saldo do mês calculado">
         <div class="balance-copy">
@@ -104,10 +104,11 @@
               <div class="insight-metrics"><div><span>Despesas no período</span><b id="periodExpense">R$ 0,00</b></div><div><span>Saldo do período</span><b id="periodBalance">R$ 0,00</b></div><div><span>Lançamentos analisados</span><b id="periodCount">0</b></div></div>
               <div class="chart-selection" id="chartSelection" aria-live="polite">Selecione um ponto do gráfico para ver mais detalhes.</div>
             </section>
-            <section class="question-card"><label>PERGUNTAS PARA EXPLORAR</label>
-              <button type="button" data-question="Como variaram minhas despesas nos últimos 3 meses?">Como mudaram meus gastos? <span>→</span></button>
-              <button type="button" data-question="Quais categorias pesaram mais?">Quais categorias pesaram mais? <span>→</span></button>
-              <button type="button" data-question="Quanto sobrou neste mês?">Quanto sobrou neste mês? <span>→</span></button>
+            <section class="question-card"><div class="question-card-head"><div><label>PERGUNTAS PARA EXPLORAR</label><p>Escolha uma pergunta para ajustar o gráfico.</p></div><span class="question-spark">✧</span></div>
+              <button type="button" data-question="Como variaram minhas despesas nos últimos 3 meses?"><i>⌁</i><span><b>Tendência</b><small>Como mudaram meus gastos?</small></span><em>→</em></button>
+              <button type="button" data-question="Quais categorias pesaram mais nos últimos 6 meses?"><i>▤</i><span><b>Categorias</b><small>Onde concentrei despesas?</small></span><em>→</em></button>
+              <button type="button" data-question="Qual foi meu maior gasto neste mês?"><i>↗</i><span><b>Maior lançamento</b><small>Qual despesa teve maior valor?</small></span><em>→</em></button>
+              <button type="button" data-question="Quanto entrou e saiu neste mês?"><i>↕</i><span><b>Entradas e saídas</b><small>Quanto entrou e quanto saiu?</small></span><em>→</em></button>
             </section>
             <p class="explore-note advanced-only">No modo Explorar, altere o período, escolha colunas ou linhas e confira os valores exatos.</p>
           </aside>
@@ -132,10 +133,11 @@
       <div class="date-line"><span>HOJE</span></div>
       <div class="message assistant"><span class="msg-avatar">✳</span><div class="bubble"><b>Olá! Vamos olhar seus números?</b><p>Posso resumir entradas, encontrar gastos maiores e comparar categorias com os lançamentos disponíveis neste navegador.</p></div></div>
     </div>
-    <div class="suggestions"><label>PERGUNTAS PARA COMEÇAR</label>
-      <button data-question="Qual foi meu maior gasto neste mês?">Qual foi meu maior gasto?</button>
-      <button data-question="Quanto entrou e saiu este mês?">Quanto entrou e saiu?</button>
-      <button data-question="Quais categorias pesaram mais?">Quais categorias pesaram mais?</button>
+    <div class="suggestions"><label>EXPERIMENTE PERGUNTAR</label>
+      <button data-question="Qual foi meu maior gasto neste mês?">Maior despesa</button>
+      <button data-question="Como variaram minhas despesas nos últimos 3 meses?">Tendência dos gastos</button>
+      <button data-question="Quanto entrou e saiu neste mês?">Entradas e saídas</button>
+      <button data-question="Quais categorias pesaram mais nos últimos 6 meses?">Categorias</button>
     </div>
     <form id="chatForm" class="composer"><label class="sr-only" for="chatInput">Pergunta sobre seus dados</label><textarea id="chatInput" rows="1" placeholder="Pergunte sobre seus dados..."></textarea><button aria-label="Enviar pergunta">➜</button><small>Enter para enviar · Processado neste navegador</small></form>
   </aside>
@@ -166,6 +168,8 @@
 </dialog>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script src="./assets/chart.umd.min.js" defer></script>
-  <script src="./main.js" defer></script>
+<script src="./assets/gsap.min.js" defer></script>
+<script src="./assets/anime.umd.min.js" defer></script>
+<script src="./main.js" defer></script>
 </body>
 </html>

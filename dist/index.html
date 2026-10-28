@@ -3,72 +3,118 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#0D3B2E">
-  <meta name="description" content="Organize entradas e despesas, entenda seus padrões e consulte sua planilha num painel financeiro simples.">
+  <meta name="theme-color" content="#0b2f25">
+  <meta name="description" content="Veja entradas, despesas e tendências da sua planilha em um painel financeiro simples, com análise local e visualizações interativas.">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="alternate icon" href="./assets/favicon.svg">
   <link rel="stylesheet" href="./landing.css">
-  <title>Clareza — enxergue o padrão das suas despesas</title>
+  <title>Clareza — seu dinheiro em perspectiva</title>
 </head>
 <body>
 <header class="site-header">
   <a class="logo" href="./index.html" aria-label="Clareza, página inicial"><img src="./assets/favicon.svg" alt=""><span>clareza<span class="logo-dot">.</span></span></a>
   <nav class="main-nav" id="mainNav" aria-label="Navegação principal">
     <a href="#como-funciona">Como funciona</a>
-    <a href="#demonstracao">Demonstração</a>
+    <a href="#demonstracao">Experimente</a>
     <a href="./dashboard.html#analises">Análises</a>
   </nav>
-  <a class="header-cta" href="./dashboard.html">Abrir painel <span aria-hidden="true">→</span></a>
+  <a class="header-cta" href="./dashboard.html">Abrir painel <span aria-hidden="true">↗</span></a>
   <button class="menu-toggle" type="button" data-menu aria-label="Abrir menu" aria-expanded="false">☰</button>
 </header>
 
 <main>
-  <section class="hero">
+  <section class="hero" id="inicio">
+    <div class="hero-glow" aria-hidden="true"></div>
     <div class="hero-copy">
       <p class="eyebrow"><span></span> ORGANIZAÇÃO FINANCEIRA NO SEU RITMO</p>
-      <h1>Enxergue o padrão por trás das suas <em>despesas.</em></h1>
-      <p class="hero-description">Um lugar simples para acompanhar o que entra, entender o que sai e fazer perguntas sobre seus lançamentos.</p>
+      <h1>Seu dinheiro,<br><em>em perspectiva.</em></h1>
+      <p class="hero-description">Transforme os lançamentos da sua planilha em uma leitura clara. Acompanhe o que entra, entenda o que sai e pergunte sobre seus números.</p>
       <div class="hero-actions">
         <a class="button primary" href="./dashboard.html">Abrir o painel <span aria-hidden="true">↗</span></a>
-        <a class="button secondary" href="#demonstracao"><span aria-hidden="true">▷</span> Ver demonstração</a>
+        <a class="button secondary" href="#demonstracao"><span aria-hidden="true">▷</span> Explorar uma análise</a>
       </div>
-      <div class="trust-note"><span>✓</span> A demonstração usa dados fictícios. Seus lançamentos ficam neste navegador.</div>
+      <div class="hero-proof"><span><i>✓</i> CSV e TSV</span><span><i>✓</i> Processamento neste navegador</span></div>
     </div>
 
-    <div class="hero-media" id="demonstracao">
+    <div class="hero-media">
       <div class="video-shell">
-        <div class="video-chrome"><span class="window-dots"><i></i><i></i><i></i></span><span>PRÉVIA DO PAINEL</span><span class="video-status"><i></i> DADOS FICTÍCIOS</span></div>
+        <div class="video-chrome"><span class="window-dots"><i></i><i></i><i></i></span><span>VISÃO GERAL DO PAINEL</span><span class="video-status"><i></i> AMOSTRA FICTÍCIA</span></div>
         <div class="video-wrap">
-          <video id="heroVideo" autoplay muted playsinline controls preload="auto" poster="./assets/financeiro-demo-poster.jpg" aria-label="Demonstração do painel financeiro">
+          <video id="heroVideo" autoplay muted playsinline controls preload="auto" poster="./assets/financeiro-demo-poster.jpg" aria-label="Vídeo de apresentação do painel financeiro">
             <source src="./assets/financeiro-demo.mp4" type="video/mp4">
             Seu navegador não conseguiu abrir o vídeo. <a href="./assets/financeiro-demo.mp4">Baixar a demonstração</a>.
           </video>
           <a class="video-end-action" id="videoEndAction" href="./dashboard.html?example=1" hidden>Ver análise de exemplo <span aria-hidden="true">→</span></a>
           <button class="video-replay" type="button" data-replay hidden>Recomeçar vídeo</button>
         </div>
-        <div class="video-caption"><span>Veja o fluxo antes de abrir o painel.</span><span>00:10 · demonstração</span></div>
+        <div class="video-caption"><span>Uma prévia rápida da experiência</span><span>Dados demonstrativos</span></div>
       </div>
-      <a class="example-link" href="./dashboard.html?example=1"><span><b>Ver análise de exemplo</b><small>Abra o painel e consulte um resumo local.</small></span><span class="example-arrow" aria-hidden="true">↗</span></a>
-    </div>
-    <div class="hero-decoration" aria-hidden="true"><i></i><i></i><i></i></div>
-  </section>
-
-  <section class="how-section" id="como-funciona">
-    <div class="section-heading"><p class="eyebrow"><span></span> UM FLUXO SIMPLES</p><h2>Seus dados, com mais contexto.</h2><p>Comece com uma planilha e encontre respostas sem complicar sua rotina.</p></div>
-    <div class="steps">
-      <article class="step-card"><span class="step-number">01</span><span class="step-icon">↑</span><h3>Traga sua planilha</h3><p>Importe um arquivo CSV ou TSV exportado do Excel ou Google Sheets. Os dados são lidos no próprio navegador.</p></article>
-      <article class="step-card"><span class="step-number">02</span><span class="step-icon">▥</span><h3>Veja como seu mês se move</h3><p>Compare entradas e despesas, confira categorias e procure lançamentos num painel único.</p></article>
-      <article class="step-card"><span class="step-number">03</span><span class="step-icon">✧</span><h3>Pergunte sobre os números</h3><p>Use o chat lateral para consultar totais, maiores gastos e categorias com base nos registros carregados.</p></article>
+      <div class="video-note"><span class="note-icon">✳</span><span><b>Comece pelos dados que você já tem.</b><small>Importe uma planilha ou explore a amostra do painel.</small></span><a href="./dashboard.html?example=1" aria-label="Abrir a amostra">↗</a></div>
+      <div class="hero-orbit hero-orbit-one" aria-hidden="true"></div><div class="hero-orbit hero-orbit-two" aria-hidden="true"></div>
     </div>
   </section>
 
-  <section class="closing-card">
-    <div><p class="eyebrow"><span></span> PRONTO PARA COMEÇAR?</p><h2>Organize primeiro. Decida com mais clareza.</h2><p>O painel abre com uma amostra fictícia; você pode importar sua própria planilha quando quiser.</p></div>
-    <a class="button light-button" href="./dashboard.html">Entrar no painel <span aria-hidden="true">→</span></a>
+  <section class="trust-rail" aria-label="Como o painel funciona">
+    <div><span class="rail-icon">▤</span><span><b>Importe seus registros</b><small>Planilhas CSV ou TSV</small></span></div>
+    <i class="rail-divider" aria-hidden="true"></i>
+    <div><span class="rail-icon">⌂</span><span><b>Mantenha o controle</b><small>Dados ficam neste navegador</small></span></div>
+    <i class="rail-divider" aria-hidden="true"></i>
+    <div><span class="rail-icon">✧</span><span><b>Explore com perguntas</b><small>Gráficos e respostas locais</small></span></div>
+  </section>
+
+  <section class="demo-section" id="demonstracao">
+    <div class="section-heading" data-reveal>
+      <p class="eyebrow"><span></span> UMA ANÁLISE QUE ACOMPANHA SUA PERGUNTA</p>
+      <h2>Faça uma pergunta.<br><em>Veja o gráfico ganhar outra forma.</em></h2>
+      <p>Experimente a prévia interativa. No painel, a visualização acompanha o assunto e o período que você escolher.</p>
+    </div>
+    <div class="demo-workspace" data-reveal>
+      <section class="demo-conversation" aria-label="Perguntas de exemplo">
+        <div class="demo-panel-kicker"><span class="assistant-mark">✳</span><div><b>Assistente financeiro</b><small><i></i> Prévia com números fictícios</small></div></div>
+        <div class="sample-message"><span>EXEMPLO DE PERGUNTA</span><b id="samplePromptTitle">Como evoluíram as despesas?</b></div>
+        <div class="sample-answer"><span>LEITURA DOS DADOS</span><p id="sampleAnswer">A linha mostra a variação das despesas mês a mês. Selecione uma categoria ou um período para mudar a análise.</p></div>
+        <div class="sample-question-list" role="group" aria-label="Escolha uma pergunta de exemplo">
+          <button type="button" data-demo-question="trend" aria-pressed="true"><span class="sample-q-icon">⌁</span><span><b>Evolução das despesas</b><small>Entenda a tendência mensal</small></span><span class="q-arrow">↗</span></button>
+          <button type="button" data-demo-question="categories" aria-pressed="false"><span class="sample-q-icon">▤</span><span><b>Quais categorias pesam mais?</b><small>Compare os principais grupos</small></span><span class="q-arrow">↗</span></button>
+          <button type="button" data-demo-question="flow" aria-pressed="false"><span class="sample-q-icon">↕</span><span><b>Quanto entrou e saiu?</b><small>Veja o movimento mensal</small></span><span class="q-arrow">↗</span></button>
+          <button type="button" data-demo-question="balance" aria-pressed="false"><span class="sample-q-icon">＋</span><span><b>Como ficou o saldo?</b><small>Entradas menos despesas</small></span><span class="q-arrow">↗</span></button>
+        </div>
+        <a class="demo-open-link" href="./dashboard.html?example=1">Abrir o painel com a amostra <span aria-hidden="true">→</span></a>
+      </section>
+      <section class="demo-chart-panel" aria-label="Gráfico de exemplo">
+        <div class="demo-chart-header"><div><span class="demo-label">EXEMPLO ILUSTRATIVO</span><h3 id="sampleChartTitle">Tendência mensal das despesas</h3><p id="sampleChartSubtitle">Valores de demonstração, em reais</p></div><span class="sample-live"><i></i> INTERATIVO</span></div>
+        <div class="period-control" role="group" aria-label="Período demonstrativo"><span>PERÍODO</span><button type="button" data-demo-period="3" aria-pressed="false">3 meses</button><button type="button" data-demo-period="6" aria-pressed="true">6 meses</button><button type="button" data-demo-period="12" aria-pressed="false">12 meses</button></div>
+        <div class="sample-chart-wrap"><canvas id="sampleChart" role="img" aria-label="Gráfico de demonstração com dados fictícios"></canvas></div>
+        <div class="demo-chart-footer"><span id="legendIncome"><i class="legend-income"></i> Entradas</span><span id="legendExpense"><i class="legend-expense"></i> Despesas</span><span id="legendBalance" hidden><i class="legend-income"></i> Saldo</span><small>Toque em uma coluna para consultar o valor</small></div>
+        <div class="demo-chart-footnote"><span>Exemplo fictício</span><span>Seus próprios registros só aparecem após a importação local.</span></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="process-section" id="como-funciona">
+    <div class="section-heading" data-reveal>
+      <p class="eyebrow"><span></span> DO ARQUIVO À VISÃO GERAL</p>
+      <h2>Uma rotina simples para<br><em>entender melhor seus números.</em></h2>
+      <p>Você escolhe a planilha, o período e o tipo de resposta que quer explorar.</p>
+    </div>
+    <div class="process-grid">
+      <article class="process-card" data-reveal><span class="process-index">01</span><span class="process-icon">↥</span><h3>Traga sua planilha</h3><p>Importe um CSV ou TSV com data, descrição e valor. Também é possível criar lançamentos no próprio painel.</p><span class="process-tag">SEUS DADOS, SEU NAVEGADOR</span></article>
+      <article class="process-card" data-reveal><span class="process-index">02</span><span class="process-icon">▥</span><h3>Escolha o que analisar</h3><p>Alterne entre fluxo, categorias e saldo. Ajuste o período e confira os valores que formam cada gráfico.</p><span class="process-tag">PERÍODO E VISUAL AJUSTÁVEIS</span></article>
+      <article class="process-card" data-reveal><span class="process-index">03</span><span class="process-icon">✧</span><h3>Pergunte em linguagem simples</h3><p>Use as sugestões ou escreva uma pergunta. O protótipo reorganiza a análise local conforme o tema.</p><span class="process-tag">RESPOSTAS CALCULADAS LOCALMENTE</span></article>
+    </div>
+  </section>
+
+  <section class="closing-section" data-reveal>
+    <div class="closing-orb" aria-hidden="true"></div>
+    <div><p class="eyebrow"><span></span> PRONTO PARA COMEÇAR?</p><h2>Uma planilha pode mostrar<br>mais do que uma lista.</h2><p>Abra o painel, importe seus registros e explore as perguntas com os dados disponíveis no navegador.</p></div>
+    <div class="closing-actions"><a class="button closing-primary" href="./dashboard.html">Importar meus dados <span aria-hidden="true">↗</span></a><a class="closing-secondary" href="./dashboard.html?example=1">Ou ver o exemplo fictício →</a></div>
   </section>
 </main>
 
 <footer class="site-footer"><a class="logo footer-logo" href="./index.html"><img src="./assets/favicon.svg" alt=""><span>clareza<span class="logo-dot">.</span></span></a><span>Protótipo front-end · sem backend ou conexão bancária.</span><a href="https://github.com/HeitorG2S/Hacktoberfest" target="_blank" rel="noopener noreferrer">Código-fonte no GitHub ↗</a></footer>
+<script src="./assets/chart.umd.min.js" defer></script>
+<script src="./assets/gsap.min.js" defer></script>
+<script src="./assets/anime.umd.min.js" defer></script>
 <script src="./landing.js" defer></script>
 </body>
 </html>
