@@ -62,7 +62,7 @@
     $("#balanceNote").textContent=balance>=0?"Saldo positivo no período":"Despesas acima das entradas";
     $("#incomeCount").textContent=current.filter(r=>r.type==="entrada").length;
     $("#expenseCount").textContent=expenses.length+(expenses.length===1?" lançamento":" lançamentos");
-    $("#topCategory").textContent=cats[0]?cats[0].name:"Sem dados";$("#topCategoryValue").textContent=cats[0]?money(cats[0].value)+" neste mês":"Importe uma planilha";
+    $("#topCategory").textContent=cats[0]?cats[0].name:"Sem dados";$("#topCategoryValue").textContent=cats[0]?money(cats[0].value)+" neste mês":"Importe uma planilha";$("#insightText").textContent=cats[0]&&totals.out?cats[0].name+" concentra "+Math.round(cats[0].value/totals.out*100)+"% das despesas registradas neste mês.":"Importe uma planilha com lançamentos para gerar este resumo.";
     $("#categoryTotal").textContent=money(totals.out);
     $("#categories").innerHTML=cats.slice(0,5).map((c,i)=>'<div class="cat"><span class="cat-name"><i class="swatch" style="background:'+["#388960","#8dbb9b","#e5b47a","#a6b3cf","#c3a7d0"][i]+'"></i> '+esc(c.name)+'</span><span class="cat-value">'+money(c.value)+'</span><span class="track"><i style="width:'+Math.max(3,totals.out?c.value/totals.out*100:0)+'%;background:'+["#388960","#8dbb9b","#e5b47a","#a6b3cf","#c3a7d0"][i]+'"></i></span></div>').join("")||'<p class="empty">Nenhuma despesa neste mês.</p>';
     renderChart();renderTable();
@@ -126,6 +126,7 @@
       if(name==="play-demo")$("#demoDialog").showModal();
       if(name==="close-demo"){ $("#demoVideo").pause();$("#demoDialog").close(); }
       if(name==="close-add")$("#addDialog").close();
+      if(name==="ask-insight"){send("Quais categorias pesaram mais?");if(innerWidth<=1050)$("#chat").classList.add("open");}
       if(name==="show-example"){ $("#demoVideo").pause();$("#demoDialog").close();send("Qual foi meu maior gasto neste mês?");if(innerWidth<=1050)$("#chat").classList.add("open");}
       if(name==="toggle-chat")$("#chat").classList.toggle("open");
       if(name==="clear-chat"){$("#messages").innerHTML='<div class="date-line"><span>HOJE</span></div>';toast("Conversa limpa. Seus dados continuam salvos.");}
