@@ -1,0 +1,14 @@
+EXEMPLO INTEIRAMENTE FICTÍCIO — perguntas para testar o simulador depois de carregar examples/extrato-exemplo.json.
+
+Gastei 45,90 no mercado e 12 de uber ontem.
+  → propõe 2 lançamentos (mercado e transporte) com a data de ontem; só registra se você clicar em Adicionar.
+Consigo pedir um iFood de R$ 60 hoje sem estourar minhas metas?
+  → veredito do motor (limite do dia, meta Lazer) e uma alternativa.
+Quanto gastei com delivery este mês?
+  → respondido no navegador, sem chamar a IA (busca nos lançamentos por sinônimos).
+Onde invisto o que sobra no mês?
+  → trilha: dívida do cartão a 12% ao mês primeiro, depois reserva de emergência (Tesouro Selic ou CDB com liquidez diária).
+Quero guardar dinheiro para emergências, comprar um computador e ainda ter um pouco para lazer. Encontre uma divisão equilibrada sem ultrapassar o que tenho disponível.
+  → metas pedem R$ 700, disponível R$ 600: plano otimizado 300/210/90 e conservador 300/250/50.
+E se eu perder 30% da minha renda?
+  → déficit de R$ 150 e metas suspensas.

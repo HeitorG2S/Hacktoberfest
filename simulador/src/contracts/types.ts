@@ -166,6 +166,7 @@ export interface Intent {
   proposedAllocation: { goal: string; amount: Cents }[]; // "plano do Gemma" (pode ser inválido)
   missing: string[];
   source: "api" | "mock"; // de onde veio a interpretação
+  fallbackReason?: string; // por que caiu no mock (mensagem segura para exibir; sem chave nem resposta da API)
 }
 
 export interface Consequence {

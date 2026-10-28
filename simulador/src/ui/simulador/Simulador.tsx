@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, FormEvent, KeyboardEvent } from "react";
 import type { SectionProps } from "../props";
 import type { Entry, Intent, ProposedEntry, RagAnswer, RetrievedDoc, SimulationResult, Goal, Priority, ScenarioType } from "../../contracts/types";
-import { interpret } from "../../llm/client";
+import { interpret, MAX_INPUT_LENGTH } from "../../llm/client";
 import { simulate, matchGoal, currentMonth, today } from "../../engine";
 import { retrieveDocs } from "../../rag/retrieve";
 import { answerWithDocs } from "../../rag/answer";
@@ -51,6 +51,7 @@ export function Simulador(props: SectionProps) {
   // Padrão: NÃO enviar o orçamento ao Gemma (dado real do usuário); ele marca se quiser.
   const [sendContext, setSendContext] = useState(() => isDemoData(state));
   const [lastIntentSource, setLastIntentSource] = useState<"api" | "mock" | null>(null);
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
 
   const handleExampleClick = useCallback((prompt: string) => {
     setInput(prompt);
@@ -78,7 +79,10 @@ export function Simulador(props: SectionProps) {
         // Etapa 1 (roteamento): perguntas comuns são respondidas localmente, sem chamar a IA.
         const quick = quickRoute(userText);
         const intent = quick ?? (await interpret(userText, goalNames, { context, todayIso: today() }));
-        if (!quick) setLastIntentSource(intent.source);
+        if (!quick) {
+          setLastIntentSource(intent.source);
+          setFallbackReason(intent.fallbackReason ?? null);
+        }
 
         if (intent.scenario === "registrar_gasto") {
           const msg: ChatMessage = intent.entries.length
@@ -388,6 +392,11 @@ export function Simulador(props: SectionProps) {
         </div>
         {modeChip}
       </header>
+      {fallbackReason && (
+        <div className="chat-privacy" role="status" style={{ borderColor: "#f3d9a8", background: "#fffaf0", color: "#8a5a00" }}>
+          {fallbackReason}
+        </div>
+      )}
       <div className="chat-privacy">
         <label>
           <input type="checkbox" checked={sendContext} onChange={(e) => setSendContext(e.target.checked)} />
@@ -470,7 +479,8 @@ export function Simulador(props: SectionProps) {
           placeholder="Pergunte sobre seus dados…"
           rows={2}
           disabled={loading}
-          aria-label="Descreva sua decisão"
+          aria-label="Pergunte sobre seus dados"
+          maxLength={MAX_INPUT_LENGTH}
         />
         <button type="submit" disabled={loading || !input.trim()} aria-label="Enviar">
           {loading ? "…" : "→"}

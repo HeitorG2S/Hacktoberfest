@@ -146,3 +146,10 @@ describe("exportação reimportável", () => {
     expect(r.state.budget.income).toBe(30000);
   });
 });
+
+describe("segurança do CSV", () => {
+  it("descrição que começa com =, +, - ou @ não vira fórmula", () => {
+    const csv = entriesToCsv([{ id: "x", date: "2026-10-03", description: "=HYPERLINK(\"http://x\")", amount: 100, type: "despesa", categorySlug: "outros", source: "manual" }]);
+    expect(csv.split("\n")[1]).toContain(`"'=HYPERLINK(""http://x"")"`);
+  });
+});

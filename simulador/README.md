@@ -1,16 +1,6 @@
-# Simulador Inteligente de Decisões Financeiras
+# Simulador de decisões (simulador/)
 
-Protótipo web: controle financeiro + **laboratório de decisões**. O usuário descreve a decisão em linguagem natural, o **Gemma** (pesos abertos, `gemma-4-26b-a4b-it` pela API do Google) só interpreta o pedido em JSON validado, e um **motor determinístico** faz toda a matemática, verifica os limites e compara os planos.
-
-## Rodar
-
-```bash
-cd app
-npm install
-cp .env.example .env   # GEMINI_API_KEY (sem ela: modo mock); a Brapi é usada sem token
-npm run dev            # http://localhost:5173
-npm test               # testes do motor, do cliente LLM, do adaptador e dos formulários
-```
+Instalação, configuração do Gemma, privacidade, créditos e checklist de submissão estão no [README da raiz](../README.md). Aqui fica o resumo técnico.
 
 ## Arquitetura (3 camadas separadas)
 

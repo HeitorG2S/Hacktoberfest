@@ -6,8 +6,10 @@ import react from "@vitejs/plugin-react";
 // e o navegador nunca a vê. Sem chave, o app roda em modo mock.
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const model = env.GEMMA_MODEL || "gemma-4-26b-a4b-it";
-  const apiKey = env.GEMINI_API_KEY ?? "";
+  // Só aceita identificadores Gemma; valor inválido volta ao padrão (mesma regra do gemma-hackday-starter).
+  const model = /^gemma-[a-z0-9.-]+$/.test(env.GEMMA_MODEL ?? "") ? env.GEMMA_MODEL! : "gemma-4-26b-a4b-it";
+  const rawKey = (env.GEMINI_API_KEY ?? "").trim();
+  const apiKey = rawKey === "cole_sua_chave_aqui" ? "" : rawKey;
   const hasKey = apiKey !== "";
   const llmMode = env.LLM_MODE === "mock" || !hasKey ? "mock" : "api";
   return {

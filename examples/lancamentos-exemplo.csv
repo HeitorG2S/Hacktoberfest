@@ -1,0 +1,9 @@
+date;description;amount;type;categorySlug;recurring
+2026-10-01;Salário;2500.00;CREDIT;salario;false
+2026-10-05;Aluguel;800.00;DEBIT;moradia;true
+2026-10-10;Contas de luz e internet;200.00;DEBIT;contas;true
+2026-10-12;Supermercado;300.00;DEBIT;mercado;false
+2026-10-15;Transporte público;200.00;DEBIT;transporte;false
+2026-10-18;Farmácia;150.00;DEBIT;saude;false
+2026-10-20;Cinema e jantar;100.00;DEBIT;lazer;false
+2026-10-25;Pagamento cartão;250.00;DEBIT;divida;false

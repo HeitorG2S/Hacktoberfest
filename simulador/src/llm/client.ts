@@ -7,6 +7,15 @@ import type { LlmContext } from "./context";
 const DEFAULT_TIMEOUT_MS = 12000; // por tentativa
 const TOTAL_BUDGET_MS = 25000; // passou disso, não tenta de novo: a demo não pode travar
 const MAX_RETRIES = 3;
+export const MAX_INPUT_LENGTH = 2000;
+
+// Mensagens seguras e acionáveis por código da API (mesmo padrão do gemma-hackday-starter).
+export function apiErrorMessage(status: number): string {
+  if (status === 429) return "Cota da API atingida. Aguarde e confira os limites do projeto no Google AI Studio.";
+  if (status === 401 || status === 403) return "Acesso negado pela API. Confira a chave, a elegibilidade da conta e as permissões no AI Studio.";
+  if (status === 400 || status === 404) return "Solicitação recusada. Confira GEMMA_MODEL e a disponibilidade do modelo no AI Studio.";
+  return "A API do Google está indisponível. Aguarde um pouco e tente novamente.";
+}
 
 function getDefaultMode(): "api" | "mock" {
   return typeof __LLM_MODE__ !== "undefined" ? __LLM_MODE__ : "mock";
@@ -38,6 +47,7 @@ export async function interpret(
     todayIso?: string; // para o modelo resolver "ontem", "dia 5"
   }
 ): Promise<Intent> {
+  if (userText.length > MAX_INPUT_LENGTH) userText = userText.slice(0, MAX_INPUT_LENGTH);
   const mode = opts?.mode ?? getDefaultMode();
   if (mode === "mock") {
     return mockInterpret(userText);
@@ -60,6 +70,7 @@ export async function interpret(
   };
 
   let lastError: string | null = null;
+  let friendly = "";
 
   const startedAt = Date.now();
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -83,6 +94,9 @@ export async function interpret(
 
       if (!response.ok) {
         lastError = `HTTP ${response.status}: ${response.statusText}`;
+        friendly = apiErrorMessage(response.status);
+        // Erros de configuração/cota não melhoram tentando de novo.
+        if ([400, 401, 403, 404, 429].includes(response.status)) break;
         // Erro 5xx da API costuma ser passageiro: espera um pouco antes de tentar de novo.
         if (response.status >= 500 && attempt < MAX_RETRIES) await new Promise((r) => setTimeout(r, 800));
         continue;
@@ -101,10 +115,12 @@ export async function interpret(
         return result.intent;
       }
       lastError = result.error;
+      friendly = "O Gemma devolveu um formato inválido; usei a interpretação local.";
     } catch (e) {
       lastError = e instanceof Error ? e.message : "Erro de rede";
+      friendly = "Falha de conexão ou tempo esgotado com a API do Google; usei a interpretação local.";
     }
   }
 
-  return mockInterpret(userText);
+  return { ...mockInterpret(userText), fallbackReason: friendly || "A API não respondeu; usei a interpretação local." };
 }

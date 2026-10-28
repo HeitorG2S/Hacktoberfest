@@ -10,7 +10,13 @@ export function formatShortDate(iso: string): string {
   return `${day} de ${MONTHS_PT[monthIdx] ?? "jan"}`;
 }
 
-function escapeCsvField(field: string): string {
+// Evita que o texto vire fórmula ao abrir o CSV numa planilha (mesmo cuidado do gemma-hackday-starter).
+function neutralizeFormula(field: string): string {
+  return /^[\s]*[=+\-@]/.test(field) || /^[\t\r\n]/.test(field) ? `'${field}` : field;
+}
+
+function escapeCsvField(raw: string): string {
+  const field = neutralizeFormula(raw);
   if (field.includes(";") || field.includes("\n") || field.includes("\r") || field.includes('"')) {
     return `"${field.replace(/"/g, '""')}"`;
   }

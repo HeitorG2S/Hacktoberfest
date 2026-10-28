@@ -1,0 +1,25 @@
+# Segredos e configuração local (mesmas regras do gemma-hackday-starter)
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+credentials*
+*service-account*.json
+*.pem
+*.key
+*.log
+.DS_Store
+
+# Node / Vite (simulador)
+node_modules/
+simulador/dist/
+.vite/
+coverage/
+
+# Dados pessoais exportados: só os exemplos fictícios entram no repositório
+exports/
+data/
+*.csv
+!examples/*.csv
+!simulador/src/adapters/extrato/fixtures/*.csv
+!dist/assets/*.csv
