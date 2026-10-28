@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#104936">
+  <meta name="description" content="Painel financeiro simples com dados locais, planilha e análise conversacional.">
+  <title>Clareza — painel financeiro</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="#inicio" aria-label="Clareza, início"><span class="brand-mark">c</span><b>clareza<span>.</span></b></a>
+    <p class="side-label">SEU ESPAÇO</p>
+    <nav>
+      <a class="nav active" href="#inicio"><i>◫</i>Visão geral</a>
+      <a class="nav" href="#lancamentos"><i>☷</i>Lançamentos</a>
+      <a class="nav" href="#analises"><i>▥</i>Análises</a>
+      <button class="nav" data-action="import"><i>↑</i>Importar planilha</button>
+    </nav>
+    <div class="side-bottom">
+      <div class="local-note"><span>✓</span><div><b>Seus dados ficam aqui</b><small>Salvos neste navegador</small></div></div>
+      <button class="demo-link" data-action="play-demo">▷ &nbsp; Assistir demonstração</button>
+      <div class="profile"><span class="avatar">C</span><div><b>Meu espaço</b><small>Modo demonstração</small></div><span class="dots">···</span></div>
+    </div>
+  </aside>
+
+  <div class="center">
+    <header class="topbar">
+      <div><span class="green-dot"></span> Seu espaço financeiro <span class="slash">/</span> <b>Visão geral</b></div>
+      <div class="top-actions"><span class="privacy"><i></i> Dados locais</span><button class="mobile-chat" data-action="toggle-chat" aria-label="Abrir chat">☏</button><span class="avatar light">C</span></div>
+    </header>
+
+    <main class="content" id="inicio">
+      <section class="welcome">
+        <div><p class="eyebrow">✳ &nbsp; <span id="todayLabel">SEU RESUMO FINANCEIRO</span></p>
+          <h1>Mais clareza para <em>suas escolhas.</em></h1>
+          <p class="subtitle">Entenda o que entra, o que sai e para onde seu dinheiro está indo.</p>
+        </div>
+        <div class="actions"><button class="btn quiet" data-action="play-demo">▷ &nbsp; Ver demonstração</button><button class="btn primary" id="addBtn">＋ &nbsp; Novo lançamento</button></div>
+      </section>
+
+      <section class="notice"><span class="demo-tag">△ DEMONSTRAÇÃO</span><span id="dataNotice">Os valores exibidos são fictícios. Importe sua planilha para começar.</span><button class="link-btn" data-action="import">Importar planilha&nbsp; →</button></section>
+
+      <section class="summary" aria-label="Resumo deste mês">
+        <article class="metric highlighted"><div class="metric-head">Saldo do mês <span class="metric-icon">◈</span></div><strong id="balance">—</strong><small id="balanceNote">Entradas menos despesas</small></article>
+        <article class="metric"><div class="metric-head">Entradas <span class="metric-icon green">↗</span></div><strong id="income">—</strong><small class="green-text">↑ <span id="incomeCount">0</span> lançamentos</small></article>
+        <article class="metric"><div class="metric-head">Despesas <span class="metric-icon orange">↘</span></div><strong id="expense">—</strong><small id="expenseCount">0 lançamentos</small></article>
+        <article class="metric"><div class="metric-head">Maior categoria <span class="metric-icon blue">▤</span></div><strong class="category-value" id="topCategory">—</strong><small id="topCategoryValue">Despesas deste mês</small></article>
+      </section>
+
+      <section class="analysis" id="analises">
+        <article class="card chart-card">
+          <div class="card-head"><div><label>MOVIMENTO</label><h2>Entradas e despesas</h2><p>Acompanhe a evolução dos últimos seis meses.</p></div><span class="period">Últimos 6 meses　⌄</span></div>
+          <div class="legend"><span><i class="leg-income"></i> Entradas</span><span><i class="leg-expense"></i> Despesas</span></div>
+          <div class="chart-area"><div class="y-labels"><span id="scaleTop"></span><span id="scaleMid"></span><span></span><span>R$ 0</span></div><div class="chart" id="chart" role="img" aria-label="Comparação mensal entre entradas e despesas"></div></div>
+          <div class="chart-foot">● &nbsp; Comparação mensal · valores em reais</div>
+        </article>
+        <article class="card category-card">
+          <div class="card-head"><div><label>ONDE VOCÊ GASTA</label><h2>Despesas por categoria</h2><p>Distribuição no mês atual.</p></div><span class="dots">···</span></div>
+          <div class="category-total"><b id="categoryTotal">R$ 0,00</b><small>total de despesas</small></div>
+          <div id="categories" class="categories"></div>
+          <div class="category-foot">ⓘ &nbsp; As categorias seguem sua planilha.</div>
+        </article>
+      </section>
+
+      <section class="card table-card" id="lancamentos">
+        <div class="table-head"><div><label>SEU DIA A DIA</label><h2>Últimos lançamentos</h2><p>Consulte e organize seus movimentos.</p></div>
+          <div class="table-tools"><label class="search">⌕ <input id="search" type="search" placeholder="Buscar lançamento"></label><button class="btn export" data-action="export">↓ &nbsp; Exportar</button></div>
+        </div>
+        <div class="table-scroll"><table><thead><tr><th>DESCRIÇÃO</th><th>CATEGORIA</th><th>DATA</th><th>CONTA</th><th class="right">VALOR</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+        <div class="table-foot"><span id="rowCount"></span><button class="text-btn" data-action="template">Baixar modelo de planilha →</button></div>
+      </section>
+      <footer class="footer"><span>Clareza · Um protótipo para organizar sua vida financeira.</span><span>● Processamento local neste navegador</span></footer>
+    </main>
+  </div>
+
+  <aside class="chat" id="chat" aria-label="Chat financeiro">
+    <header class="chat-head"><span class="chat-logo">✳</span><div><b>Converse com seus dados</b><small><i></i> Assistente local</small></div><button class="mobile-chat chat-close" data-action="toggle-chat" aria-label="Fechar chat">×</button><button class="clear-chat" data-action="clear-chat" aria-label="Limpar conversa">···</button></header>
+    <div class="chat-privacy">♧ &nbsp; Suas perguntas usam os dados carregados aqui.</div>
+    <div class="messages" id="messages" aria-live="polite">
+      <div class="date-line"><span>HOJE</span></div>
+      <div class="message assistant"><span class="msg-avatar">✳</span><div class="bubble"><b>Olá! Vamos olhar seus números?</b><p>Posso resumir entradas, encontrar gastos maiores e comparar categorias com os lançamentos disponíveis neste navegador.</p></div></div>
+    </div>
+    <div class="suggestions"><label>PERGUNTAS PARA COMEÇAR</label>
+      <button data-question="Qual foi meu maior gasto neste mês?">Qual foi meu maior gasto?</button>
+      <button data-question="Quanto entrou e saiu este mês?">Quanto entrou e saiu?</button>
+      <button data-question="Quais categorias pesaram mais?">Quais categorias pesaram mais?</button>
+    </div>
+    <form id="chatForm" class="composer"><label class="sr-only" for="chatInput">Pergunta sobre seus dados</label><textarea id="chatInput" rows="1" placeholder="Pergunte sobre seus dados..."></textarea><button aria-label="Enviar pergunta">➜</button><small>Enter para enviar · Processado neste navegador</small></form>
+  </aside>
+</div>
+
+<input class="sr-only" id="fileInput" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
+<dialog id="addDialog" class="modal">
+  <form id="entryForm" class="modal-box">
+    <div class="modal-head"><div><label>NOVO REGISTRO</label><h2>Adicionar lançamento</h2><p>Salvo somente neste navegador.</p></div><button type="button" class="close" data-action="close-add">×</button></div>
+    <div class="form-grid">
+      <label class="wide">Descrição<input name="description" required maxlength="90" placeholder="Ex.: Conta de internet"></label>
+      <label>Tipo<select name="type"><option value="saída">Despesa</option><option value="entrada">Entrada</option></select></label>
+      <label>Valor (R$)<input name="amount" inputmode="decimal" required placeholder="0,00"></label>
+      <label>Categoria<input name="category" list="categoryOptions" required placeholder="Ex.: Moradia"></label>
+      <datalist id="categoryOptions"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Saúde</option><option>Lazer</option><option>Salário</option><option>Outros</option></datalist>
+      <label>Data<input name="date" type="date" required></label>
+      <label class="wide">Conta<input name="account" placeholder="Conta principal"></label>
+    </div>
+    <div class="modal-actions"><button type="button" class="btn quiet" data-action="close-add">Cancelar</button><button class="btn primary" type="submit">Salvar lançamento</button></div>
+  </form>
+</dialog>
+<dialog id="demoDialog" class="modal demo-modal">
+  <div class="modal-box">
+    <div class="modal-head"><div><label>CLAREZA EM 10 SEGUNDOS</label><h2>Uma prévia da experiência</h2><p>O vídeo original que você enviou.</p></div><button type="button" class="close" data-action="close-demo">×</button></div>
+    <video id="demoVideo" controls playsinline preload="metadata"><source src="./assets/financeiro-demo.mp4" type="video/mp4">Seu navegador não conseguiu abrir este vídeo.</video>
+    <div class="demo-bottom"><span>● &nbsp; A demonstração contém dados fictícios.</span><button class="btn primary" data-action="show-example">Ver análise de exemplo &nbsp; →</button></div>
+  </div>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="./main.js" defer></script>
+</body>
+</html>
