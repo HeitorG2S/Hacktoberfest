@@ -46,11 +46,20 @@ describe("resumo do mês", () => {
   });
 
   it("simulate com mês usa o disponível efetivo e explica", () => {
-    const intent: Intent = { scenario: "alocar_metas", entries: [], tickers: [], months: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock" };
+    const intent: Intent = { scenario: "alocar_metas", entries: [], tickers: [], months: null, searchTerm: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock" };
     const r = simulate(withEntries([entry({ amount: 10000, categorySlug: "lazer" })]), intent, { month: "2026-10" });
     expect(r.available).toBe(50000);
     expect(r.plans.find((p) => p.plan.label === "otimizado")!.total).toBe(50000);
     expect(r.explanation.join(" ")).toContain("R$ 500,00");
+  });
+
+  it("gasto de lazer consome a meta Lazer no simulate (sem contar duas vezes)", () => {
+    const intent: Intent = { scenario: "alocar_metas", entries: [], tickers: [], months: null, searchTerm: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock" };
+    const r = simulate(withEntries([entry({ amount: 10000, categorySlug: "lazer" })]), intent, { month: "2026-10" });
+    const opt = r.plans.find((p) => p.plan.label === "otimizado")!;
+    // disponível 500; metas pedem 300 + 250 + (150 − 100) = 600
+    expect(opt.perGoal.find((g) => g.goalId === "lazer")!.requested).toBe(5000);
+    expect(r.explanation.join(" ")).toContain("faltam R$ 100,00");
   });
 
   it("datas locais", () => {

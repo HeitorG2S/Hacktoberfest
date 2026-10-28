@@ -5,6 +5,7 @@ import { interpret } from "../../llm/client";
 import { simulate, matchGoal, currentMonth, today } from "../../engine";
 import { retrieveDocs } from "../../rag/retrieve";
 import { answerWithDocs } from "../../rag/answer";
+import { quickRoute } from "../../rag/router";
 import { buildLlmContext, isDemoData } from "../../llm/context";
 import { setLastRun } from "../session";
 import { formatMoney } from "../../engine/money";
@@ -12,6 +13,9 @@ import { scenarioLabel, priorityLabel } from "./labels";
 
 const EXAMPLE_PROMPTS = [
   "Gastei R$ 45,90 no mercado hoje",
+  "Consigo pedir um iFood de R$ 60 hoje sem estourar minhas metas?",
+  "Onde invisto o que sobra no mês?",
+  "Quanto gastei com delivery este mês?",
   "Como está a PETR4? Quantas cotas compro com R$ 500?",
   "Quanto rende guardar R$ 200 por mês durante 2 anos?",
   "Divida o que sobrou do mês entre as minhas metas, sem ultrapassar o disponível.",
@@ -71,8 +75,10 @@ export function Simulador(props: SectionProps) {
         // a correspondência com as metas cadastradas é feita localmente pelo motor (matchGoal).
         const goalNames = sendContext ? state.goals.map((g) => g.name) : [];
         const context = sendContext ? buildLlmContext(state) : undefined;
-        const intent = await interpret(userText, goalNames, { context, todayIso: today() });
-        setLastIntentSource(intent.source);
+        // Etapa 1 (roteamento): perguntas comuns são respondidas localmente, sem chamar a IA.
+        const quick = quickRoute(userText);
+        const intent = quick ?? (await interpret(userText, goalNames, { context, todayIso: today() }));
+        if (!quick) setLastIntentSource(intent.source);
 
         if (intent.scenario === "registrar_gasto") {
           const msg: ChatMessage = intent.entries.length
@@ -82,9 +88,12 @@ export function Simulador(props: SectionProps) {
           return;
         }
 
-        if (intent.scenario === "investimento") {
-          const { docs, errors } = await retrieveDocs(intent, state, { month: currentMonth(), includeBudget: sendContext });
-          const answer = await answerWithDocs(userText, docs, { errors, mode: intent.source === "mock" ? "mock" : undefined });
+        if (intent.scenario === "investimento" || intent.scenario === "pode_gastar" || intent.scenario === "consulta") {
+          // Etapas 2–4: recuperação nos dados locais (+ Brapi), prompt com os dados calculados, geração conferida.
+          const { docs, errors, draft } = await retrieveDocs(intent, state, { month: currentMonth(), today: today(), includeBudget: sendContext });
+          const answer = quick
+            ? await answerWithDocs(userText, docs, { errors, draft, mode: "mock" }).then((a) => ({ ...a, source: "local" as const }))
+            : await answerWithDocs(userText, docs, { errors, draft, allowPersonal: sendContext, mode: intent.source === "mock" ? "mock" : undefined });
           setHistory((h) => [...h, { role: "assistant", content: "", intent, rag: { answer, docs, errors } }]);
           return;
         }
@@ -175,10 +184,16 @@ export function Simulador(props: SectionProps) {
 
   const renderRag = (rag: NonNullable<ChatMessage["rag"]>) => (
     <div className="card-insight">
-      <h3>✦ Resposta com dados da Brapi</h3>
+      <h3>✦ {rag.docs.some((d) => d.source === "brapi") ? "Resposta com seus dados e a Brapi" : "Resposta com os seus dados"}</h3>
       <p style={{ margin: "0 0 0.5rem" }}>{rag.answer.answer}</p>
       <p className="muted" style={{ fontSize: "12px", margin: "0 0 0.25rem" }}>
-        {rag.answer.source === "api" ? "Redigido pelo Gemma a partir das fontes abaixo; números conferidos pelo app." : "Montado diretamente das fontes abaixo."}
+        {rag.answer.source === "api"
+          ? "Redigido pelo Gemma a partir dos dados abaixo; números conferidos pelo app."
+          : rag.answer.source === "local"
+            ? rag.docs.some((d) => d.personal) && !sendContext
+              ? "Respondido no seu navegador, sem IA externa (marque a opção acima para o Gemma redigir com seus dados)."
+              : "Respondido no seu navegador, sem IA externa."
+            : "Montado diretamente dos dados abaixo."}
       </p>
       {rag.docs.length > 0 && (
         <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.1rem", fontSize: "12px" }}>

@@ -6,3 +6,4 @@ export { applyIntentGoals, explainPlans, gemmaPlan, matchGoal, projectDebt, simu
 export { evaluatePlan } from "./validate";
 export { currentMonth, entriesOfMonth, entryBucket, monthSummary, today } from "./month";
 export { formatRateBps, monthlyRatePpm, projectInvestment, sharesFor } from "./investment";
+export { biggestExpense, categoryBox, daysLeftInMonth, fixedPending, investmentGuidance, requestedAfterSpending, spendCheck, spentInCategory, totalOf } from "./insights";

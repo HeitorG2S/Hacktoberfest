@@ -47,6 +47,7 @@ describe("parseLlmText", () => {
     entries: [],
     tickers: [],
     months: null,
+    search_term: null,
   };
 
   it("retorna ok:true para JSON válido", () => {
@@ -97,6 +98,7 @@ describe("parseLlmText", () => {
       entries: [],
       tickers: [],
       months: null,
+      search_term: null,
     };
     const text = JSON.stringify(raw);
     const result = parseLlmText(text, "mock");
@@ -122,6 +124,7 @@ describe("toIntent", () => {
       entries: [],
       tickers: [],
       months: null,
+      search_term: null,
     };
     const intent = toIntent(raw, "api");
     expect(intent.amount).toBe(50075);
@@ -141,6 +144,7 @@ describe("toIntent", () => {
       entries: [],
       tickers: [],
       months: null,
+      search_term: null,
     };
     const intent = toIntent(raw, "mock");
     expect(intent.scenario).toBe("desconhecido");

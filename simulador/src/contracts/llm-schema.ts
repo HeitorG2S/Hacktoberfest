@@ -8,6 +8,8 @@ export const MONEY_TEXT = /^\d+(\.\d{1,2})?$/;
 const money = z.string().regex(MONEY_TEXT);
 
 export const SCENARIOS = [
+  "pode_gastar",
+  "consulta",
   "registrar_gasto",
   "investimento",
   "alocar_metas",
@@ -51,6 +53,7 @@ export const RawIntentSchema = z
       .default([]),
     tickers: z.array(z.string().regex(/^[A-Z]{4}\d{1,2}$/)).max(5).default([]),
     months: z.number().int().min(1).max(600).nullable().default(null),
+    search_term: z.string().max(40).nullable().default(null),
   })
   .strict();
 

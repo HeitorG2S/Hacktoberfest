@@ -180,6 +180,7 @@ describe("Invariante 3: Todos os valores de saída são inteiros seguros", () =>
       entries: [],
       tickers: [],
       months: null,
+      searchTerm: null,
       amount: 20000,
       goals: [],
       incomeChangePct: null,
@@ -435,6 +436,7 @@ describe("Invariante 8: simulate robustez com valores extremos e explicação n�
           entries: [],
           tickers: [],
           months: null,
+          searchTerm: null,
           goals:
             scenario === "meta_com_prazo"
               ? [{ name: "computador", amount: amount ?? 30000, deadlineMonths: 6, priority: "alta" }]

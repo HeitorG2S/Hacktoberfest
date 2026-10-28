@@ -8,7 +8,7 @@ const AVAIL = available(DEMO_STATE.budget);
 const amounts = (p: Plan) => Object.fromEntries(p.allocations.map((a) => [a.goalId, a.amount]));
 const total = (p: Plan) => p.allocations.reduce((s, a) => s + a.amount, 0);
 const intent = (over: Partial<Intent>): Intent => ({
-  scenario: "alocar_metas", entries: [], tickers: [], months: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock", ...over,
+  scenario: "alocar_metas", entries: [], tickers: [], months: null, searchTerm: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock", ...over,
 });
 const withPriority = (id: string, priority: Goal["priority"]) => goals.map((g) => (g.id === id ? { ...g, priority } : g));
 

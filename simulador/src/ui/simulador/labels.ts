@@ -1,6 +1,8 @@
 import type { ScenarioType, Priority } from "../../contracts/types";
 
 export const SCENARIO_LABEL: Record<ScenarioType, string> = {
+  pode_gastar: "Posso gastar?",
+  consulta: "Consulta aos meus dados",
   registrar_gasto: "Registrar lançamento",
   investimento: "Investimentos",
   alocar_metas: "Dividir entre metas",

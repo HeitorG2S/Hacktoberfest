@@ -32,17 +32,19 @@ Limitação conhecida (achada na revisão independente): pedidos que não são m
 
 Com o arquivo de exemplo da aba Importar (R$ 600 disponíveis, metas somando R$ 700): otimizado 300 / 210 / 90; conservador (prioridade estrita) 300 / 250 / 50.
 
-## Agente
+## Agente (RAG em 4 etapas)
 
-No chat, o Gemma classifica o pedido:
-- **Registrar lançamento** ("gastei R$ 45 no mercado", "recebi 300 de um freela"): o agente propõe os lançamentos e **só registra depois que o usuário confirma**.
-- **Investimentos** ("como está a PETR4?", "quanto rende R$ 200 por mês em 2 anos?"): RAG com a Brapi; a projeção usa a taxa anual que o usuário informa (o plano grátis da Brapi não traz Selic/CDI). Informativo, não é recomendação.
-- **Decisões** (compra, meta com prazo, despesa inesperada, dívida × reserva, perda de renda, divisão entre metas): simuladas pelo motor com o disponível do mês já ajustado pelos lançamentos.
+1. **Roteamento** (`src/rag/router.ts` + Gemma): perguntas comuns ("quanto tenho?", "maior despesa", "quanto gastei com X?") são respondidas por template, **sem chamar a IA**; o resto o Gemma classifica: posso gastar, consulta, registrar lançamento, investimento ou uma decisão do simulador.
+2. **Recuperação** (`src/rag/retrieve.ts`, `src/engine/insights.ts`, `src/rag/vector.ts`): consultas estruturadas no motor (limite do dia, livre no mês sem mexer nas metas, metas-"caixinha" como Lazer, contas fixas pendentes, trilha de investimento) + **busca vetorial local** (TF-IDF com sinônimos, no navegador) sobre os lançamentos, para "delivery" achar iFood/Rappi. Cotações da Brapi pública. O motor já devolve um **rascunho** de resposta (veredito + alternativa).
+3. **Prompt contextualizado** (`src/rag/answer.ts`): dados reais calculados + rascunho; regras: nunca inventar números, responder direto, sugerir alternativa, linguagem simples.
+4. **Geração**: o Gemma reescreve; uma checagem confere que todo número está nos dados (senão vale o rascunho). Ele **pode sugerir** próximos passos e tipos de aplicação (reserva no Tesouro Selic/CDB com liquidez diária, quitar dívida cara, diversificar com fundos de índice), vindos da trilha do motor; ordem de compra/venda de um ativo específico é descartada.
+
+Também: registrar lançamentos pedidos no chat (só após confirmação) e simular decisões no Laboratório.
 
 ## Privacidade
 
 - Nenhum dado financeiro vai a servidor próprio: estado no `localStorage`, importação lida no navegador.
-- Ao Gemma vai a frase do usuário e os nomes das metas; o resumo do orçamento só vai se o usuário marcar a opção (padrão: não enviar).
+- Ao Gemma vai a frase do usuário. Dados do orçamento e dos lançamentos só vão se o usuário marcar a opção (padrão: não enviar), e anonimizados (sem CPF/CNPJ, e-mail ou números de conta); sem a opção, a resposta é o rascunho do motor, montado no navegador.
 - À Brapi vão só os códigos dos ativos.
 - A chave da API fica no proxy do Vite (`.env`), nunca no navegador.
 

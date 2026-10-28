@@ -53,6 +53,7 @@ const CATEGORY_ALIASES: Record<string, string> = {
   aluguel: "moradia", condominio: "moradia", luz: "contas", agua: "contas", internet: "contas", telefone: "contas",
   uber: "transporte", onibus: "transporte", combustivel: "transporte", gasolina: "transporte",
   farmacia: "saude", remedio: "saude", medico: "saude", restaurante: "lazer", cinema: "lazer",
+  ifood: "lazer", rappi: "lazer", delivery: "lazer", lanche: "lazer", pizza: "lazer", bar: "lazer",
   curso: "educacao", escola: "educacao", cartao: "divida", emprestimo: "divida",
 };
 export function normalizeCategory(raw: string): string {
@@ -87,6 +88,7 @@ export function toIntent(raw: RawIntent, source: "api" | "mock"): Intent {
     entries,
     tickers: raw.tickers,
     months: raw.months,
+    searchTerm: raw.search_term,
     goals,
     amount: raw.amount !== null ? parseMoney(raw.amount) : null,
     incomeChangePct: raw.income_change_pct,

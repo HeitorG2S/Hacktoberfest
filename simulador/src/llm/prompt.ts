@@ -13,8 +13,10 @@ export function buildPrompt(userText: string, goalNames: string[], context?: Llm
 
 Esquema (RawIntent):
 - scenario: um de ["registrar_gasto", "investimento", "alocar_metas", "compra", "meta_com_prazo", "despesa_inesperada", "divida_vs_reserva", "perda_renda", "desconhecido"]
+  - "pode_gastar": o usuário PERGUNTA se pode fazer um gasto do dia a dia agora ("consigo pedir um iFood de 60 hoje?").
+  - "consulta": perguntas sobre os próprios gastos/saldo ("quanto gastei com uber?", "qual minha maior despesa?").
   - "registrar_gasto": o usuário CONTA um gasto ou receita que JÁ aconteceu e quer anotar ("gastei", "paguei", "recebi", "anota aí").
-  - "investimento": perguntas sobre ações, FIIs, cotações, quanto rende investir, renda fixa.
+  - "investimento": perguntas sobre ações, FIIs, cotações, quanto rende investir, renda fixa, onde/como investir.
   - "compra": uma compra que o usuário AINDA está decidindo fazer.
 - goals: array de até 10 objetos com: name (string 1-60), amount (string "1234.56" ou null), deadline_months (int 1-600 ou null), priority ("alta"|"media"|"baixa"|null)
 - amount: string "1234.56" ou null (valor da compra/despesa inesperada)
@@ -24,6 +26,7 @@ Esquema (RawIntent):
 - entries: em "registrar_gasto", lista de lançamentos {description: string curta, amount: "45.90", type: "despesa"|"receita", category: um de [salario, moradia, contas, mercado, transporte, saude, educacao, lazer, divida, outros], date: "AAAA-MM-DD" ou null}; senão []
 - tickers: em "investimento", códigos de ativos da B3 citados, em maiúsculas (ex.: "PETR4", "MXRF11"); senão []
 - months: em "investimento", prazo em meses citado, ou null
+- search_term: em "pode_gastar" e "consulta", o estabelecimento ou assunto citado em minúsculas ("ifood", "uber", "mercado"), ou null
 
 Regras:
 - Valores monetários SEMPRE como texto com ponto decimal ("1800.00"), nunca número.
@@ -99,6 +102,21 @@ Saída:
   "entries": [],
   "tickers": ["ITUB4"],
   "months": 24
+}
+
+Entrada: "Consigo pedir um iFood de R$ 60 hoje sem estourar minhas metas?"
+Saída:
+{
+  "scenario": "pode_gastar",
+  "goals": [],
+  "amount": "60.00",
+  "income_change_pct": null,
+  "proposed_allocation": [],
+  "missing": [],
+  "entries": [],
+  "tickers": [],
+  "months": null,
+  "search_term": "ifood"
 }
 
 Agora interprete:

@@ -4,6 +4,7 @@ import type { Quote, TickerInfo, InvestmentProjection, FinancialState } from "..
 import { searchTickers, fetchQuote, BrapiError, TICKER_RE } from "../../brapi/client";
 import { projectInvestment, sharesFor, monthSummary, currentMonth, formatMoney, parseMoney } from "../../engine";
 import { parseRatePercent, formatRateBps } from "./rate";
+import { Trilha } from "./Trilha";
 
 const DEFAULT_WATCHED = ["PETR4", "ITUB4"];
 const DEFAULT_SIMULATION_VALUE = 1000000; // R$ 100,00 em centavos
@@ -182,7 +183,7 @@ export function Investimentos(props: SectionProps) {
 
 
   return (
-    <section className="content" style={{ maxWidth: "1200px", margin: "0 auto", padding: "29px 28px 24px" }}>
+    <section style={{ display: "grid", gap: "0" }}>
       <div className="card card-insight" style={{ marginBottom: "16px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
           <span className="chip warn">Conteúdo informativo</span>
@@ -193,6 +194,8 @@ export function Investimentos(props: SectionProps) {
           <span className="muted" style={{ fontSize: "12px", marginLeft: "0.5rem" }}>PETR4, MGLU3, VALE3 e ITUB4 com cotação do dia; demais ativos pelo último fechamento.</span>
         </div>
       </div>
+
+      <Trilha state={props.state} />
 
       <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))" }}>
         <div className="card">

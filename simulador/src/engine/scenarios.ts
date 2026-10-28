@@ -11,6 +11,10 @@ import type {
 } from "../contracts/types";
 import { available, totalRequested } from "./budget";
 import { monthSummary } from "./month";
+import { spentInCategory } from "./insights";
+import { CATEGORY_SLUGS } from "../contracts/import-format";
+
+const CATEGORY_SLUGS_SET = new Set<string>(CATEGORY_SLUGS);
 import { applyBps, ceilDiv, formatMoney, sum } from "./money";
 import { conservativePlan, optimize } from "./optimizer";
 import { evaluatePlan } from "./validate";
@@ -138,7 +142,17 @@ export function projectDebt(debt: Debt, monthlyPayment: Cents, maxMonths = 600):
 export function simulate(state: FinancialState, intent: Intent, opts: { month?: string } = {}): SimulationResult {
   const summary = opts.month ? monthSummary(state, opts.month) : null;
   const baseAvail = summary ? summary.effectiveAvailable : available(state.budget);
-  const { goals, notes } = applyIntentGoals(state.goals, intent);
+  // Metas-"caixinha" (ex.: Lazer): o que já foi gasto na categoria no mês sai do pedido da meta,
+  // porque esse gasto já reduziu o disponível (mesma regra de insights.requestedAfterSpending).
+  const baseGoals = summary
+    ? state.goals.map((g) => {
+        const slug = CATEGORY_SLUGS_SET.has(g.id) ? g.id : null;
+        if (!slug || g.deadlineMonths !== null) return g;
+        const spent = spentInCategory(state, summary.month, slug).total;
+        return spent > 0 ? { ...g, target: Math.max(g.saved, g.target - spent) } : g;
+      })
+    : state.goals;
+  const { goals, notes } = applyIntentGoals(baseGoals, intent);
   const requested = totalRequested(goals);
   const consequences: Consequence[] = [];
   const explanation: string[] = [...notes];

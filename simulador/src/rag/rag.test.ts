@@ -5,7 +5,7 @@ import { answerWithDocs, isGrounded, templateAnswer } from "./answer";
 import { retrieveDocs } from "./retrieve";
 
 const intent = (over: Partial<Intent>): Intent => ({
-  scenario: "investimento", entries: [], tickers: [], months: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock", ...over,
+  scenario: "investimento", entries: [], tickers: [], months: null, searchTerm: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock", ...over,
 });
 const PETR4: Quote = { symbol: "PETR4", name: "Petroleo Brasileiro SA Pfd", price: 5299, changePct: 0.38, currency: "BRL", updatedAt: null, logoUrl: null };
 const quotes = async (s: string) => {
@@ -19,16 +19,17 @@ describe("recuperação", () => {
   it("cotação + cotas que cabem no valor", async () => {
     const { docs, errors } = await retrieveDocs(intent({ tickers: ["PETR4"], amount: 20000 }), DEMO_STATE, { month: "2026-10", now: NOW, fetchQuote: quotes });
     expect(errors).toEqual([]);
-    expect(docs.map((d) => d.id)).toEqual(["brapi:PETR4", "motor:cotas-PETR4"]);
-    expect(docs[0]!.text).toContain("R$ 52,99");
-    expect(docs[0]!.text).toContain("+0,38%");
-    expect(docs[1]!.text).toContain("3 cota(s)");
-    expect(docs[1]!.text).toContain("sobrando R$ 41,03");
+    const market = docs.filter((d) => !d.id.startsWith("motor:trilha"));
+    expect(market.map((d) => d.id)).toEqual(["brapi:PETR4", "motor:cotas-PETR4"]);
+    expect(market[0]!.text).toContain("R$ 52,99");
+    expect(market[0]!.text).toContain("+0,38%");
+    expect(market[1]!.text).toContain("3 cota(s)");
+    expect(market[1]!.text).toContain("sobrando R$ 41,03");
   });
 
   it("erro da Brapi vira aviso, sem derrubar os outros ativos", async () => {
     const { docs, errors } = await retrieveDocs(intent({ tickers: ["PETR4", "ABCD3"] }), DEMO_STATE, { month: "2026-10", fetchQuote: quotes });
-    expect(docs).toHaveLength(1);
+    expect(docs.filter((d) => d.source === "brapi")).toHaveLength(1);
     expect(errors[0]).toContain("ABCD3");
   });
 
@@ -42,7 +43,7 @@ describe("recuperação", () => {
 
   it("sem taxa cadastrada não inventa rendimento", async () => {
     const { docs } = await retrieveDocs(intent({ amount: 20000, months: 12 }), DEMO_STATE, { month: "2026-10", fetchQuote: quotes });
-    expect(docs.map((d) => d.id)).toEqual(["motor:sem-taxa"]);
+    expect(docs.filter((d) => !d.id.startsWith("motor:trilha")).map((d) => d.id)).toEqual(["motor:sem-taxa"]);
   });
 
   it("orçamento do usuário só entra com permissão", async () => {

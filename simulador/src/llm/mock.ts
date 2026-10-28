@@ -105,6 +105,7 @@ const EMPTY_INTENT_FIELDS = {
   entries: [],
   tickers: [],
   months: null,
+  searchTerm: null,
   goals: [],
   amount: null,
   incomeChangePct: null,
@@ -161,9 +162,18 @@ export function mockInterpret(userText: string): Intent {
     if (entries.length > 0) return { ...EMPTY_INTENT_FIELDS, scenario: "registrar_gasto", entries };
   }
 
+  // "Consigo pedir um iFood de R$ 60 hoje?" → posso gastar (gasto do dia a dia).
+  if (/\b(consigo|posso|da pra|da para|cabe)\b/.test(norm) && /\b(hoje|agora|essa semana|esta semana)\b/.test(norm)) {
+    const amount = extractMoney(userText);
+    if (amount !== null && amount > 0) {
+      const term = norm.match(/\b(?:pedir|comprar|gastar com|gastar no|gastar na|ir ao|ir no|ir na)\s+(?:um|uma|o|a)?\s*([a-z]+)/)?.[1] ?? null;
+      return { ...EMPTY_INTENT_FIELDS, scenario: "pode_gastar", amount, searchTerm: term };
+    }
+  }
+
   // Investimentos: ticker citado ou vocabulário de investimento.
   const tickers = [...new Set((userText.toUpperCase().match(/\b[A-Z]{4}\d{1,2}\b/g) ?? []))].slice(0, 5);
-  if (tickers.length > 0 || /\b(investir|investimento|investimentos|acoes|acao|fii|fiis|cotacao|rendimento|render|renda fixa|tesouro|cdi|selic)\b/.test(norm)) {
+  if (tickers.length > 0 || /\b(investir|invisto|investimento|investimentos|aplicar|acoes|acao|fii|fiis|cotacao|rendimento|render|renda fixa|tesouro|cdi|selic|reserva de emergencia)\b/.test(norm)) {
     return {
       ...EMPTY_INTENT_FIELDS,
       scenario: "investimento",
@@ -179,6 +189,7 @@ export function mockInterpret(userText: string): Intent {
       entries: [],
       tickers: [],
       months: null,
+      searchTerm: null,
       goals: [
         createIntentGoal("reserva", null, null, null),
         createIntentGoal("computador", null, null, null),
@@ -202,6 +213,7 @@ export function mockInterpret(userText: string): Intent {
       entries: [],
       tickers: [],
       months: null,
+      searchTerm: null,
       goals: [createIntentGoal(goalName, money, deadlineMonths, null)],
       amount: null,
       incomeChangePct: null,
@@ -220,6 +232,7 @@ export function mockInterpret(userText: string): Intent {
         entries: [],
         tickers: [],
         months: null,
+        searchTerm: null,
         goals: [],
         amount: null,
         incomeChangePct: pct,
@@ -236,6 +249,7 @@ export function mockInterpret(userText: string): Intent {
       entries: [],
       tickers: [],
       months: null,
+      searchTerm: null,
       goals: [],
       amount: money,
       incomeChangePct: null,
@@ -251,6 +265,7 @@ export function mockInterpret(userText: string): Intent {
       entries: [],
       tickers: [],
       months: null,
+      searchTerm: null,
       goals: [],
       amount: null,
       incomeChangePct: null,
@@ -267,6 +282,7 @@ export function mockInterpret(userText: string): Intent {
       entries: [],
       tickers: [],
       months: null,
+      searchTerm: null,
       goals: [createIntentGoal(goalName, money, null, null)],
       amount: money,
       incomeChangePct: null,
@@ -281,6 +297,7 @@ export function mockInterpret(userText: string): Intent {
     entries: [],
     tickers: [],
     months: null,
+    searchTerm: null,
     goals: [],
     amount: null,
     incomeChangePct: null,

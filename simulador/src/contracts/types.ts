@@ -125,6 +125,8 @@ export interface PlanEvaluation {
 }
 
 export type ScenarioType =
+  | "pode_gastar"
+  | "consulta"
   | "registrar_gasto"
   | "investimento"
   | "alocar_metas"
@@ -157,6 +159,7 @@ export interface Intent {
   entries: ProposedEntry[]; // registrar_gasto
   tickers: string[]; // investimento: ativos citados (ex.: PETR4, MXRF11)
   months: number | null; // investimento: prazo citado
+  searchTerm: string | null; // pode_gastar/consulta: estabelecimento ou assunto ("ifood", "mercado")
   goals: IntentGoal[];
   amount: Cents | null; // valor da compra / despesa inesperada
   incomeChangePct: number | null; // ex.: -30 para perda de 30% da renda
@@ -226,11 +229,34 @@ export interface RetrievedDoc {
   text: string; // fatos em português, com os números já formatados
   url: string | null;
   fetchedAt: string; // ISO
+  personal?: boolean; // true = dado do usuário (só vai ao LLM externo com a permissão dele)
 }
 
 export interface RagAnswer {
   answer: string;
   citations: string[]; // ids de RetrievedDoc usados
   grounded: boolean; // true = passou na checagem de que todo número da resposta está nos documentos
-  source: "api" | "mock";
+  source: "api" | "mock" | "local"; // local = respondido por template, sem chamar a IA
+}
+
+// Passo da trilha de investimento calculada pelo motor (engine/insights.ts). Regras fixas e transparentes.
+export interface GuidanceStep {
+  id: "sem-sobra" | "divida-cara" | "reserva" | "diversificar";
+  title: string;
+  detail: string; // já com os valores formatados
+  amount: Cents | null; // valor sugerido por mês para este passo
+}
+
+// Veredito de "posso gastar X?" calculado pelo motor.
+export interface SpendCheck {
+  amount: Cents;
+  daysLeft: number;
+  freeMonth: Cents; // disponível efetivo − o que as metas pedem no mês (pode ser negativo)
+  dailyFree: Cents; // freeMonth / dias restantes (0 se negativo)
+  effectiveAvailable: Cents;
+  verdict: "cabe_no_dia" | "cabe_no_mes" | "reduz_metas" | "nao_cabe";
+  overDaily: Cents; // quanto passa do limite do dia (0 se não passa)
+  goalCut: Cents; // quanto sai das metas (0 se não sai)
+  shortfall: Cents; // quanto falta se não cabe (0 se cabe)
+  box: { goalName: string; remaining: Cents; fromBox: Cents } | null; // meta da mesma categoria (ex.: Lazer), consumida primeiro
 }

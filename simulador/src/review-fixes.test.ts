@@ -6,7 +6,7 @@ import { answerWithDocs } from "./rag/answer";
 import { EMPTY_STATE, normalizeState } from "./store";
 
 const intent = (over: Partial<Intent>): Intent => ({
-  scenario: "perda_renda", entries: [], tickers: [], months: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock", ...over,
+  scenario: "perda_renda", entries: [], tickers: [], months: null, searchTerm: null, goals: [], amount: null, incomeChangePct: null, proposedAllocation: [], missing: [], source: "mock", ...over,
 });
 
 describe("achados da review", () => {
